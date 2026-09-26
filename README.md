@@ -1,5 +1,9 @@
 <p align="center">
-  <img src="icon.png" width="96" height="96" alt="Antigravity Rewind Logo" style="border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);" />
+  <img src="docs/images/banner.svg" alt="Antigravity Rewind Banner" width="100%" />
+</p>
+
+<p align="center">
+  <img src="icon.png" width="80" height="80" alt="Antigravity Rewind Logo" style="border-radius: 18px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);" />
 </p>
 
 <h1 align="center">Antigravity Rewind</h1>
