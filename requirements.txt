@@ -1,0 +1,4 @@
+# Optional dependencies for running E2E test suite or building the binary
+# The core app uses only Python standard library!
+playwright>=1.40.0
+pyinstaller>=6.0.0

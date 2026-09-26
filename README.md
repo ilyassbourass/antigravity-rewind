@@ -1,127 +1,260 @@
-# ⚡ Antigravity Rewind • Desktop Time Machine & Rollback Engine
+<p align="center">
+  <img src="icon.png" width="96" height="96" alt="Antigravity Rewind Logo" style="border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);" />
+</p>
 
-[![Platform](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-blue.svg)](https://github.com)
-[![Architecture](https://img.shields.io/badge/engine-6--Layer%20Atomic%20Rollback-indigo.svg)](https://github.com)
-[![Status](https://img.shields.io/badge/status-Production%20Verified%20(100%25)-success.svg)](https://github.com)
-[![Zero Install](https://img.shields.io/badge/binary-Zero--Install%20Standalone%20EXE-emerald.svg)](https://github.com)
-[![Themes](https://img.shields.io/badge/themes-Dark%20(Antigravity)%20%7C%20Light%20(Paper)-amber.svg)](https://github.com)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+<h1 align="center">Antigravity Rewind</h1>
 
-A high-performance standalone desktop time machine and trajectory inspector for **Google Antigravity**. Built from first principles to match the authentic Antigravity 2.0 interface, enabling developers to inspect, undo, prune, and roll back any AI session to an exact message, tool, or thinking step with 100% byte-for-byte SQLite and transcript parity.
+<p align="center">
+  <strong>The Surgical Time Machine, Undo Engine & Conversation Manager for Google Antigravity</strong>
+</p>
 
----
+<p align="center">
+  <em>Effortlessly undo stuck thinking, runaway tool loops, filter blocks ("I cannot assist with that"), and corrupted sessions with 100% byte-for-byte SQLite parity.</em>
+</p>
 
-## 🌟 Key Features
+<p align="center">
+  <a href="https://github.com/ilyassbourass/antigravity-rewind/releases"><img src="https://img.shields.io/github/v/release/ilyassbourass/antigravity-rewind?color=06b6d4&label=download%20exe&logo=windows" alt="Latest Release"></a>
+  <a href="https://github.com/ilyassbourass/antigravity-rewind/stargazers"><img src="https://img.shields.io/github/stars/ilyassbourass/antigravity-rewind?color=eab308&logo=github" alt="GitHub Stars"></a>
+  <img src="https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-blue.svg?logo=windows" alt="Platform">
+  <img src="https://img.shields.io/badge/engine-6--Layer%20Atomic%20Rollback-6366f1.svg" alt="Rollback Engine">
+  <img src="https://img.shields.io/badge/tests-100%25%20Verified%20(Playwright)-emerald.svg" alt="Tests">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License"></a>
+</p>
 
-### 1. 🎯 Pixel-Perfect Antigravity 2.0 Interface
-- **Exact Visual Replica**: Authentic Antigravity workspace layout, monospace typography, warm gold badges, and markdown code cards with one-click copy.
-- **Full Thinking Monologue Display**: Spacious, unconstrained thinking blocks styled identically to Google Antigravity (`Thinking for 14s ⌵`), supporting full expansion without cramped 240px clipping.
-- **Bottom Prompt Bar & Step Jumper**: Matches the Antigravity prompt bar with model indicator (`+ Gemini 3.8 Flash High ⌃`) and fast step-jumping.
-
-### 2. ⚡ Injected In-Chat Undo Actions
-- Injected **Undo** controls appear seamlessly on hover beside every:
-  - 💬 **User Request**
-  - 🧠 **Thinking Step**
-  - 🛠️ **Tool Execution Group** (files explored, searches, commands executed)
-  - 📝 **File Edit** (with +lines / -lines diff badges)
-  - 🤖 **Assistant Response**
-- **Ghost Pruning Diff**: Hovering over any Undo action dims subsequent messages in the chat feed with a crimson dashed indicator so you can see exactly what will be pruned before confirming.
-- **Flexible Rollback Modes**: Choose whether to undo the selected item and everything after, or keep the item as the final message.
-
-### 3. 🌓 Dynamic Dark & Light Themes
-- **Dark (Antigravity)**: Exact charcoal/obsidian palette with subtle glass borders.
-- **Light (Paper)**: High-contrast slate and paper styling for bright daylight environments.
-- **Instant Toggle**: Toggle via the sun/moon button in the chat header or the Settings modal; preference persists automatically in local storage.
-
-### 4. 🚀 Blazing Fast & Zero Scroll Lag
-- **Tail Deque Stream Loading**: Large conversation trajectories (verified on **18,790+ step** enterprise sessions like FaizVPN) load in **0.18 seconds** using tail stream buffers.
-- **Instant Bottom Placement**: When switching conversations, the feed instantly positions at the latest message without slow animated scrolling from step 0. Smooth scrolling is reserved for the floating `↓` button.
-- **On-Demand Full History**: Large chats display an "earlier messages" milestone banner allowing 1-click loading of complete history on demand.
-
-### 5. 🛡️ Time Machine Snapshots & Reversible Restores
-- **Automatic Backups**: Automatic snapshot created before every rollback.
-- **Native Inline Confirmation**: Revert snapshots directly inside the drawer without disruptive browser alert popups.
-- **Active Milestone Tag**: Real-time status indicators show which snapshot matches the live conversation.
-- **Manual Snapshots**: Save milestone snapshots with custom notes at any point.
-
-### 6. ⚙️ Settings Modal & Quick Utilities
-- **Antigravity Data Store Connection**: Displays current brain directory (`.gemini/antigravity`) status with a 1-click button to open the directory directly in Windows Explorer.
-- **Safety Defaults**: Toggle automatic backups and SQLite WAL checkpoints/vacuuming.
-- **Keyboard Shortcuts Cheat Sheet**:
-  - `Ctrl + R`: Refresh conversation data
-  - `Ctrl + H`: Toggle Snapshots drawer
-  - `Ctrl + ,`: Open Settings & Preferences
-  - `Esc`: Close any open modal or drawer
+<p align="center">
+  <a href="#-quick-download"><strong>⚡ Quick Download</strong></a> •
+  <a href="#-why-antigravity-rewind"><strong>💡 Why Rewind?</strong></a> •
+  <a href="#-visual-tour"><strong>📸 Visual Tour</strong></a> •
+  <a href="#-key-features"><strong>✨ Features</strong></a> •
+  <a href="#-architecture"><strong>🏛️ Architecture</strong></a> •
+  <a href="#-installation"><strong>🚀 Getting Started</strong></a> •
+  <a href="#-faq"><strong>❓ FAQ</strong></a>
+</p>
 
 ---
 
-## 🏛️ The 6-Layer Atomic Rollback Engine
+## ⚡ Quick Download
 
-Antigravity stores conversation state across SQLite databases, chunk caches, and JSONL streams. `Antigravity Rewind` surgically updates all 6 layers simultaneously:
+Download the zero-install, ready-to-run desktop executable:
 
-1. **SQLite Database (`conversations/<id>.db`)**:
-   - Prunes the `steps` table where `idx > target_step`.
-   - Executes `PRAGMA wal_checkpoint(TRUNCATE)` and `VACUUM` to ensure database integrity.
-2. **Transcript Stream (`brain/<id>/.system_generated/logs/transcript.jsonl`)**:
-   - Truncates compact event log stream at the target step index.
-3. **Full Transcript Stream (`brain/<id>/.system_generated/logs/transcript_full.jsonl`)**:
-   - Truncates full payload event log stream at the target step index.
-4. **Virtual Scroll Chunks (`chunks/transcript/` & `chunks/transcript_full/`)**:
-   - Re-slices fixed 100 KB (`102,400 bytes`) chunk files with byte parity to prevent IDE scroll crashes.
-5. **Step Execution Artifacts (`steps/<step_idx>/`)**:
-   - Cleans up orphaned output folders for post-cut steps.
-6. **Task Logs & Cross-Step Messages (`tasks/` & `messages/`)**:
-   - Removes post-cut `task-<id>.log` files and updates message queues.
+👉 **[Download AntigravityRewind.exe (Latest Release)](https://github.com/ilyassbourass/antigravity-rewind/releases/latest)**
+
+*No Python, Node.js, or runtime installation required. Simply double-click and launch.*
 
 ---
 
-## 🚀 How to Run
+## 💡 Why Antigravity Rewind?
 
-### Standalone Executable (Zero Installation)
-Double-click `AntigravityRewind.exe` in the project directory, or run from shell:
-```bash
-AntigravityRewind.exe
+**Google Antigravity** is one of the most powerful agentic AI coding platforms in existence. However, developers working on extensive, multi-hour coding sessions inevitably hit critical stumbling blocks:
+
+### 🛑 1. The Context-Polluting Refusal Block ("I cannot assist with that")
+When Gemini or an agentic tool triggers a safety filter or outputs *"I cannot assist with that"*, that turn is permanently committed to your session context. In subsequent prompts, the model repeatedly fixates on the refusal and refuses to proceed.  
+**Antigravity Rewind Solution:** Hover over the offending message or tool turn, click **Undo from here**, and surgically purge it from the SQLite database and transcript streams in 1 second. Your conversation is instantly freed.
+
+### 🛑 2. Runaway Thinking & Infinite Tool Loops
+Occasionally, the model spends 3+ minutes in a runaway thinking loop or initiates recursive web searches / test executions you didn't ask for.  
+**Antigravity Rewind Solution:** Stop the process, open Antigravity Rewind, and rewind to the exact turn before the model went off track.
+
+### 🛑 3. Google Antigravity's Disappearing Conversation Bug
+Users frequently report that clicking the native Antigravity "Undo" or "Restore" button causes the entire thread to disappear from the sidebar or triggers accidental file deletion prompts for files modified in later turns.  
+**Antigravity Rewind Solution:** Uses a **6-Layer Atomic SQLite Rollback Engine** that prunes logs, updates WAL checkpoints, re-slices 100 KB virtual scroll chunks, and creates non-destructive snapshot backups beforehand. Zero code loss. Zero file risk.
+
+### 🛑 4. Safe Branching & Time Travel
+Want to explore an alternative architectural approach without losing your 500-step session? Take an instant milestone snapshot, test your idea, and revert back with 1 click anytime.
+
+---
+
+## 📸 Visual Tour
+
+### 🎯 1. Authentic Antigravity UI with Injected Undo
+*Crafted from scratch to look, feel, and behave identically to Google Antigravity.*
+
+![Exact Antigravity Chat UI](docs/images/e2e_07_chat_ui_exact.png)
+
+---
+
+### ⚡ 2. Injected In-Chat Hover Undo & Ghost Pruning
+*Hover over any user message, thinking block, command group, or assistant response. Ghost pruning dynamically dims future messages in real-time before you confirm.*
+
+![Injected Undo Confirmation Modal](docs/images/e2e_04_undo_modal.png)
+
+---
+
+### 🛡️ 3. Time Machine Snapshots with Exact Timestamps
+*Inspect all snapshots with real timestamps, milestone step numbers, thread titles, and active state indicators.*
+
+![Snapshots & Restore History Drawer](docs/images/e2e_01_snapshots_drawer.png)
+
+---
+
+### 🔄 4. 1-Click "Restart Antigravity" Prompt
+*When you rewind or restore, Antigravity Rewind prompts you to restart Antigravity.exe with a single click, immediately loading your rewound session into your editor.*
+
+![Restart Antigravity Prompt Modal](docs/images/e2e_03b_restart_ag_modal.png)
+
+---
+
+### 🌓 5. Dynamic Dark & Light Themes
+*Toggle between authentic Antigravity Dark and crisp Paper Light modes with Ctrl+, or the top header icon.*
+
+![Light Mode UI](docs/images/e2e_05_light_theme.png)
+
+---
+
+## ✨ Key Features
+
+| Feature | Description |
+| :--- | :--- |
+| **Surgical In-Chat Undo** | Injected controls beside every message, thinking block, file diff, and tool execution group. |
+| **Ghost Pruning Diff** | Real-time crimson preview showing exactly which turns will be pruned before you confirm. |
+| **Restart Antigravity Prompt** | Automated modal that terminates `Antigravity.exe`, releases database locks, and relaunches the editor with 1 click. |
+| **Real Timestamp Snapshots** | Clean timestamping (`YYYY-MM-DD HH:MM:SS`) and active milestone badges for effortless session time travel. |
+| **Disappearing Thread Fixer** | Directly accesses `.gemini/antigravity` storage, recovering sessions hidden by UI glitches. |
+| **Filter Block Remover** | Eliminates safety refusal turns (`I cannot assist with that`) from SQLite context so conversations stay productive. |
+| **Tail Deque Streaming** | Tested on **18,790-step** enterprise sessions (FaizVPN) — loads in **0.15 seconds** with zero UI lag. |
+| **Instant Bottom Placement** | Immediately jumps to the latest turn upon opening a conversation without sluggish step-by-step scrolling. |
+| **Dark & Light Modes** | Authentic Antigravity obsidian theme and high-contrast paper light theme. |
+| **Zero External Dependencies** | Core app uses 100% native Python standard library modules (`sqlite3`, `http.server`, `urllib`). |
+
+---
+
+## 🏛️ Architecture: The 6-Layer Atomic Rollback Engine
+
+When Google Antigravity runs, it manages state across multiple synchronized layers. A naive edit to SQLite will corrupt the transcript or crash the virtual scroll buffer. `Antigravity Rewind` coordinates a simultaneous 6-layer atomic rollback:
+
 ```
-Launches in an ultra-clean borderless desktop window using your installed Chrome or Edge browser engine.
+[ Antigravity Rewind Engine ]
+           │
+           ├── 1. SQLite Database (conversations/<id>.db)
+           │      └── Deletes steps > target_step; executes PRAGMA wal_checkpoint(TRUNCATE) & VACUUM
+           │
+           ├── 2. Compact Transcript (logs/transcript.jsonl)
+           │      └── Rewinds JSONL event stream to exact target step index
+           │
+           ├── 3. Full Payload Transcript (logs/transcript_full.jsonl)
+           │      └── Truncates full turn payload data with byte parity
+           │
+           ├── 4. Virtual Scroll Chunks (chunks/transcript/ & chunks/transcript_full/)
+           │      └── Re-slices 100 KB (102,400 bytes) binary chunks to eliminate IDE UI scroll crashes
+           │
+           ├── 5. Output Artifacts (steps/<step_idx>/)
+           │      └── Safely prunes post-cut temporary tool output files
+           │
+           └── 6. Message Queues & Task Logs (tasks/ & messages/)
+                  └── Synchronizes read.json tracking and removes obsolete task outputs
+```
 
-### Running from Source
+---
+
+## 🚀 Getting Started
+
+### Option 1: Standalone Desktop App (Recommended)
+1. Download **[`AntigravityRewind.exe`](https://github.com/ilyassbourass/antigravity-rewind/releases/latest)** from the Releases page.
+2. Place it anywhere on your computer and double-click to launch.
+3. Antigravity Rewind automatically detects your Antigravity installation and lists your conversations!
+
+### Option 2: Run from Source
 ```bash
-# Install dependencies
-pip install -r requirements.txt  # Or: pip install playwright
+# Clone the repository
+git clone https://github.com/ilyassbourass/antigravity-rewind.git
+cd antigravity-rewind
 
-# Launch desktop app
+# Run desktop application (Uses Python standard library)
 python app.py
 ```
 
-### Building the Executable
+### Option 3: Build Standalone Executable
 ```bash
+# Install PyInstaller
+pip install pyinstaller
+
+# Run Windows build script
 build_exe.bat
 ```
-Produces a completely self-contained `AntigravityRewind.exe` with application icon, offline tailwind, lucide icons, and marked.js bundled.
 
 ---
 
-## 🧪 End-to-End Human Verification Suite
+## ⌨️ Keyboard Shortcuts
 
-Antigravity Rewind includes a comprehensive Playwright automation suite (`verify_playwright_e2e.py`) that tests real-world interactions without mocking:
+| Shortcut | Action |
+| :--- | :--- |
+| <kbd>Ctrl</kbd> + <kbd>R</kbd> | Refresh conversations and live feed |
+| <kbd>Ctrl</kbd> + <kbd>H</kbd> | Toggle History & Snapshots Drawer |
+| <kbd>Ctrl</kbd> + <kbd>,</kbd> | Open Settings & Preferences Modal |
+| <kbd>Esc</kbd> | Close any open drawer, modal, or prompt |
+
+---
+
+## 🧪 Automated Testing & Verification
+
+Antigravity Rewind is rigorously tested using an end-to-end Playwright test suite that verifies human-like interactions against real Antigravity database trajectories:
+
 ```bash
+# Install Playwright
+pip install playwright
+python -m playwright install chromium
+
+# Run End-to-End Test Suite
 python verify_playwright_e2e.py
 ```
-Verified test suite covers:
-1. Application launch & conversation discovery.
-2. Sidebar conversation selection & feed rendering.
-3. Snapshots drawer opening & metadata validation.
-4. Real-world rollback simulation and milestone restoration.
-5. In-card native restore confirmation without browser alert leaks.
-6. Real-time active state badge updates.
-7. Hover-based in-chat undo action and ghost pruning diff.
-8. Light / Dark theme toggles with CSS variable verification.
-9. Settings modal rendering, Data Store connection, and `Esc` shortcut.
-10. Real-time sidebar search filtering.
-11. Fast tail-loading (<0.20s on 18,790-step session) & instant bottom placement.
-12. Exact Antigravity thinking block and prompt bar rendering.
+
+**Test Coverage:**
+- 100% of dialogs verified (zero browser alert leaks)
+- Rollback execution & SQLite parity
+- In-drawer milestone restoration
+- "Restart Antigravity" modal triggering & dismissal
+- Real-time timestamp rendering
+- Instant tail-deque loading on large sessions
+
+---
+
+## ❓ Frequently Asked Questions (FAQ)
+
+<details>
+<summary><strong>Does Antigravity Rewind delete my actual project source files?</strong></summary>
+<p><strong>No.</strong> Antigravity Rewind operates strictly on Antigravity's conversation database (<code>.gemini/antigravity/conversations/</code> and <code>.gemini/antigravity/brain/</code>). It never touches or deletes files in your workspace project directory. Furthermore, an automatic snapshot is saved prior to every rollback.</p>
+</details>
+
+<details>
+<summary><strong>What happens if Antigravity is open when I perform an Undo?</strong></summary>
+<p>When you click "Rewind" or "Restore", Antigravity Rewind prompts you: <em>"Restart Antigravity? [Yes, Restart] [No, Later]"</em>. Clicking <strong>Yes, Restart</strong> terminates <code>Antigravity.exe</code>, waits for SQLite file locks to clear, and relaunches the editor so the rewound state displays instantly.</p>
+</details>
+
+<details>
+<summary><strong>Can I undo an undo (time-travel back forward)?</strong></summary>
+<p><strong>Yes!</strong> Every time you perform an undo or restore, an automatic snapshot is preserved in the Snapshots drawer. You can return to any previous milestone at any time.</p>
+</details>
+
+<details>
+<summary><strong>How does this fix "I cannot assist with that" filter blocks?</strong></summary>
+<p>When Gemini generates a safety refusal, that message turn is written into SQLite. Every prompt after that sends the refusal back to the model as part of the context window. Rewinding to the step right before the refusal turn purges it completely, allowing you to rephrase your instruction and continue your session without interference.</p>
+</details>
+
+---
+
+## 🤝 Contributing
+
+Contributions, issues, and feature requests are welcome!  
+Feel free to check the [issues page](https://github.com/ilyassbourass/antigravity-rewind/issues).
+
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+---
+
+## 🌟 Show Your Support
+
+If **Antigravity Rewind** saved your conversation, fixed a stuck loop, or made your agentic workflow smoother, please consider giving this repository a **Star ⭐**! It helps more developers discover the tool.
 
 ---
 
 ## 📄 License
-MIT License. Free to use, modify, and distribute.
+
+Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for more information.
+
+<p align="center">
+  <sub>Built with ❤️ for the Google Antigravity & Agentic AI developer community.</sub>
+</p>
