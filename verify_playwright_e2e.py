@@ -1,15 +1,22 @@
 import os
 import sys
 import time
+import json
+import shutil
+import sqlite3
 import threading
 from http.server import HTTPServer
-from app import AppHandler, PORT
+from app import AppHandler, PORT, backend
 from playwright.sync_api import sync_playwright
 
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
-ARTIFACT_DIR = r"C:\Users\PC\.gemini\antigravity\brain\f74d1ad5-f0d6-444e-b174-59e7d78ca3a8"
+candidate_dir = r"C:\Users\PC\.gemini\antigravity\brain\f74d1ad5-f0d6-444e-b174-59e7d78ca3a8"
+if os.path.exists(os.path.dirname(candidate_dir)):
+    ARTIFACT_DIR = candidate_dir
+else:
+    ARTIFACT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_artifacts")
 os.makedirs(ARTIFACT_DIR, exist_ok=True)
 
 import socket
@@ -27,7 +34,137 @@ def start_server():
     time.sleep(0.5)
     return server, port
 
+def ensure_test_fixtures(base_path):
+    conv_dir = os.path.join(base_path, "conversations")
+    annot_dir = os.path.join(base_path, "annotations")
+    brain_dir = os.path.join(base_path, "brain")
+    os.makedirs(conv_dir, exist_ok=True)
+    os.makedirs(annot_dir, exist_ok=True)
+    os.makedirs(brain_dir, exist_ok=True)
+
+    # 1. BourassVPN
+    bourass_id = "89076268-ad08-4b72-8e89-2137e778740c"
+    bourass_pb = os.path.join(annot_dir, f"{bourass_id}.pbtxt")
+    if not os.path.exists(bourass_pb):
+        with open(bourass_pb, "w", encoding="utf-8") as f:
+            f.write('title: "BourassVPN Optimization Project Handoff"\n')
+
+    bourass_db = os.path.join(conv_dir, f"{bourass_id}.db")
+    if not os.path.exists(bourass_db):
+        conn = sqlite3.connect(bourass_db)
+        c = conn.cursor()
+        c.execute("CREATE TABLE IF NOT EXISTS steps (idx INTEGER PRIMARY KEY, data BLOB);")
+        for i in range(1050):
+            c.execute("INSERT OR REPLACE INTO steps (idx, data) VALUES (?, ?);", (i, b"step_data"))
+        conn.commit()
+        conn.close()
+
+    b_logs = os.path.join(brain_dir, bourass_id, ".system_generated", "logs")
+    os.makedirs(b_logs, exist_ok=True)
+    t_file = os.path.join(b_logs, "transcript.jsonl")
+    if not os.path.exists(t_file):
+        with open(t_file, "w", encoding="utf-8") as f:
+            f.write(json.dumps({"step_index": 0, "type": "USER_INPUT", "source": "USER_EXPLICIT", "content": "<USER_REQUEST>BourassVPN start</USER_REQUEST>"}) + "\n")
+            f.write(json.dumps({"step_index": 1, "type": "PLANNER_RESPONSE", "source": "MODEL", "content": "Running optimization", "thinking": "Thinking for 14s"}) + "\n")
+            f.write(json.dumps({"step_index": 2, "type": "TOOL_CALL", "tool_calls": [{"tool_name": "run_command", "args": {"CommandLine": "dir"}}]}) + "\n")
+            f.write(json.dumps({"step_index": 3, "type": "PLANNER_RESPONSE", "source": "MODEL", "content": "### 🏁 Optimization Complete: BourassVPN Now Beats FaizVPN We have recompiled..."}) + "\n")
+    tf_file = os.path.join(b_logs, "transcript_full.jsonl")
+    if not os.path.exists(tf_file):
+        shutil.copy2(t_file, tf_file)
+
+    b_bak = os.path.join(brain_dir, bourass_id, "backups", "backup_20260926_174807")
+    os.makedirs(b_bak, exist_ok=True)
+    if not os.path.exists(os.path.join(b_bak, f"{bourass_id}.db")):
+        conn = sqlite3.connect(os.path.join(b_bak, f"{bourass_id}.db"))
+        c = conn.cursor()
+        c.execute("CREATE TABLE IF NOT EXISTS steps (idx INTEGER PRIMARY KEY, data BLOB);")
+        for i in range(1051):
+            c.execute("INSERT OR REPLACE INTO steps (idx, data) VALUES (?, ?);", (i, b"step_data"))
+        conn.commit()
+        conn.close()
+    if not os.path.exists(os.path.join(b_bak, "transcript.jsonl")):
+        shutil.copy2(t_file, os.path.join(b_bak, "transcript.jsonl"))
+
+    # 2. Samsung Custom Animation Setup
+    samsung_id = "1de7c250-59af-45c8-93ec-84f468944ff8"
+    samsung_pb = os.path.join(annot_dir, f"{samsung_id}.pbtxt")
+    if not os.path.exists(samsung_pb):
+        with open(samsung_pb, "w", encoding="utf-8") as f:
+            f.write('title: "Samsung Custom Animation Setup"\n')
+
+    s_logs = os.path.join(brain_dir, samsung_id, ".system_generated", "logs")
+    os.makedirs(s_logs, exist_ok=True)
+    st_file = os.path.join(s_logs, "transcript.jsonl")
+    if not os.path.exists(st_file):
+        with open(st_file, "w", encoding="utf-8") as f:
+            f.write(json.dumps({"step_index": 0, "type": "USER_INPUT", "source": "USER_EXPLICIT", "content": "Setup Samsung animations"}) + "\n")
+            f.write(json.dumps({"step_index": 1, "type": "PLANNER_RESPONSE", "source": "MODEL", "content": "Configuring animation scales and bezier curves", "thinking": "Thinking for 10s"}) + "\n")
+            f.write(json.dumps({"step_index": 2, "type": "PLANNER_RESPONSE", "source": "MODEL", "content": "Assistant Response: Samsung Animation Setup is complete with custom spring values."}) + "\n")
+    stf_file = os.path.join(s_logs, "transcript_full.jsonl")
+    if not os.path.exists(stf_file):
+        shutil.copy2(st_file, stf_file)
+
+    samsung_db = os.path.join(conv_dir, f"{samsung_id}.db")
+    if not os.path.exists(samsung_db):
+        conn = sqlite3.connect(samsung_db)
+        c = conn.cursor()
+        c.execute("CREATE TABLE IF NOT EXISTS steps (idx INTEGER PRIMARY KEY, data BLOB);")
+        for i in range(472):
+            c.execute("INSERT OR REPLACE INTO steps (idx, data) VALUES (?, ?);", (i, b"step_data"))
+        conn.commit()
+        conn.close()
+
+    s_bak = os.path.join(brain_dir, samsung_id, "backups", "backup_20260926_174127")
+    os.makedirs(s_bak, exist_ok=True)
+    if not os.path.exists(os.path.join(s_bak, f"{samsung_id}.db")):
+        conn = sqlite3.connect(os.path.join(s_bak, f"{samsung_id}.db"))
+        c = conn.cursor()
+        c.execute("CREATE TABLE IF NOT EXISTS steps (idx INTEGER PRIMARY KEY, data BLOB);")
+        for i in range(472):
+            c.execute("INSERT OR REPLACE INTO steps (idx, data) VALUES (?, ?);", (i, b"step_data"))
+        conn.commit()
+        conn.close()
+    if not os.path.exists(os.path.join(s_bak, "transcript.jsonl")):
+        shutil.copy2(st_file, os.path.join(s_bak, "transcript.jsonl"))
+
+    # 3. FaizVPN Complete Knowledge Dossier
+    faiz_id = "faizvpn-test-dossier-001"
+    faiz_pb = os.path.join(annot_dir, f"{faiz_id}.pbtxt")
+    if not os.path.exists(faiz_pb):
+        with open(faiz_pb, "w", encoding="utf-8") as f:
+            f.write('title: "FaizVPN Complete Knowledge Dossier"\n')
+
+    faiz_db = os.path.join(conv_dir, f"{faiz_id}.db")
+    if not os.path.exists(faiz_db):
+        conn = sqlite3.connect(faiz_db)
+        c = conn.cursor()
+        c.execute("CREATE TABLE IF NOT EXISTS steps (idx INTEGER PRIMARY KEY, data BLOB);")
+        for i in range(120):
+            c.execute("INSERT OR REPLACE INTO steps (idx, data) VALUES (?, ?);", (i, b"step_data"))
+        conn.commit()
+        conn.close()
+
+    f_logs = os.path.join(brain_dir, faiz_id, ".system_generated", "logs")
+    os.makedirs(f_logs, exist_ok=True)
+    ft_file = os.path.join(f_logs, "transcript.jsonl")
+    if not os.path.exists(ft_file):
+        with open(ft_file, "w", encoding="utf-8") as f:
+            for i in range(80):
+                f.write(json.dumps({
+                    "step_index": i,
+                    "type": "PLANNER_RESPONSE" if i % 2 == 1 else "USER_INPUT",
+                    "source": "MODEL" if i % 2 == 1 else "USER_EXPLICIT",
+                    "content": f"Step payload {i}: " + ("x" * 250),
+                    "thinking": "Thinking for 32s" if i == 1 else None
+                }) + "\n")
+    ftf_file = os.path.join(f_logs, "transcript_full.jsonl")
+    if not os.path.exists(ftf_file):
+        shutil.copy2(ft_file, ftf_file)
+
 def run_e2e_test():
+    print("[E2E] Ensuring test fixtures in Antigravity storage...", flush=True)
+    ensure_test_fixtures(backend.base_path)
+
     print("[E2E] Starting local backend server...", flush=True)
     server, port = start_server()
     print(f"[E2E] Server running at http://127.0.0.1:{port}", flush=True)
@@ -35,8 +172,11 @@ def run_e2e_test():
     dialogs_encountered = []
 
     with sync_playwright() as p:
-        print("[E2E] Launching Chrome via Playwright...", flush=True)
-        browser = p.chromium.launch(channel="chrome", headless=True)
+        print("[E2E] Launching browser via Playwright...", flush=True)
+        try:
+            browser = p.chromium.launch(channel="chrome", headless=True)
+        except Exception:
+            browser = p.chromium.launch(headless=True)
         context = browser.new_context(viewport={"width": 1280, "height": 820})
         page = context.new_page()
 
