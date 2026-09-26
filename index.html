@@ -216,27 +216,20 @@
 </head>
 <body class="h-screen w-screen flex flex-col overflow-hidden bg-ag-window text-ag-text">
 
-  <!-- ================= 1. NATIVE ANTIGRAVITY WINDOW TITLEBAR ================= -->
-  <header class="h-9 bg-ag-window border-b border-ag-border/50 px-3 flex items-center justify-between text-xs shrink-0 select-none">
-    <div class="flex items-center gap-4 text-ag-muted font-medium text-[11.5px]">
-      <div class="flex items-center gap-1.5 cursor-default">
-        <img src="icon.png" class="w-4 h-4 rounded-sm object-contain" alt="Logo">
-        <span class="text-ag-text font-semibold">Antigravity</span>
-        <span class="text-[10px] font-mono text-cyan-400 bg-cyan-500/10 px-1 py-0.2 rounded border border-cyan-500/20 ml-0.5">Rewind</span>
-      </div>
-      <span onclick="refreshData()" class="hover:text-ag-text cursor-pointer transition" title="Refresh (Ctrl+R)">File</span>
-      <span onclick="openSettingsModal()" class="hover:text-ag-text cursor-pointer transition" title="Settings (Ctrl+,)">Preferences</span>
-      <span onclick="toggleTheme()" class="hover:text-ag-text cursor-pointer transition" title="Toggle Theme">View</span>
-      <span onclick="openSnapshotsDrawer()" class="hover:text-ag-text cursor-pointer transition" title="Snapshots (Ctrl+H)">History</span>
+  <!-- ================= 1. NATIVE WINDOW TITLEBAR ================= -->
+  <header class="h-9 bg-ag-window border-b border-ag-border/50 px-3.5 flex items-center justify-between text-xs shrink-0 select-none">
+    <div class="flex items-center gap-2 cursor-default">
+      <img src="icon.png" class="w-4 h-4 rounded-sm object-contain" alt="Logo">
+      <span class="text-ag-text font-semibold tracking-tight">Antigravity</span>
+      <span class="text-[10px] font-mono text-cyan-400 bg-cyan-500/10 px-1.5 py-0.5 rounded border border-cyan-500/20 font-medium">Rewind</span>
     </div>
 
     <div class="text-[11px] text-ag-muted font-medium truncate max-w-sm" id="titlebar-session-title">
       Antigravity Rewind
     </div>
 
-    <div class="flex items-center gap-3 text-ag-muted text-xs pr-1">
-      <button onclick="toggleTheme()" class="hover:text-ag-text p-1 transition" title="Toggle Light / Dark mode"><i id="titlebar-theme-icon" data-lucide="sun" class="w-3.5 h-3.5 text-amber-400"></i></button>
-      <button onclick="openSettingsModal()" class="hover:text-ag-text p-1 transition" title="Settings"><i data-lucide="settings" class="w-3.5 h-3.5"></i></button>
+    <div class="flex items-center gap-2">
+      <span class="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">Time Machine Active</span>
     </div>
   </header>
 
@@ -248,17 +241,9 @@
       
       <!-- Top Action Bar -->
       <div class="p-3 pb-2 flex items-center justify-between text-ag-dim">
-        <div class="flex items-center gap-2.5">
-          <img src="icon.png" class="w-6 h-6 rounded-md shadow-sm" alt="Logo">
-          <span class="font-semibold text-ag-text text-xs tracking-tight">Antigravity 2.0</span>
-        </div>
-        <div class="flex items-center gap-1 text-ag-muted">
-          <button onclick="refreshData()" class="p-1 hover:text-ag-text rounded hover:bg-ag-surface transition" title="Refresh (Ctrl+R)">
-            <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
-          </button>
-          <button onclick="openSettingsModal()" class="p-1 hover:text-ag-text rounded hover:bg-ag-surface transition" title="Settings">
-            <i data-lucide="settings" class="w-3.5 h-3.5"></i>
-          </button>
+        <div class="flex items-center gap-2">
+          <img src="icon.png" class="w-5 h-5 rounded-md shadow-sm" alt="Logo">
+          <span class="font-semibold text-ag-text text-xs tracking-tight">Antigravity Rewind</span>
         </div>
       </div>
 
@@ -273,11 +258,8 @@
 
       <!-- Conversations Section Header + Real-Time Search Bar -->
       <div class="px-3 pt-2 pb-1.5 space-y-1.5">
-        <div class="flex items-center justify-between text-[11px] font-semibold text-ag-muted uppercase tracking-wider">
-          <span>Conversations</span>
-          <button onclick="refreshData()" class="hover:text-ag-text transition" title="Refresh (Ctrl+R)">
-            <i data-lucide="rotate-cw" class="w-3 h-3"></i>
-          </button>
+        <div class="text-[11px] font-semibold text-ag-muted uppercase tracking-wider">
+          Conversations
         </div>
         <!-- Real-Time Search Filter -->
         <div class="relative">
@@ -351,33 +333,9 @@
         </div>
 
         <!-- Floating Scroll to Bottom Button -->
-        <button id="btn-scroll-bottom" onclick="scrollToBottomSmooth()" class="fixed bottom-24 right-10 w-9 h-9 rounded-full bg-ag-surface border border-ag-border hover:border-ag-borderHover text-ag-text flex items-center justify-center shadow-xl transition opacity-0 pointer-events-none z-20" title="Scroll to latest message">
+        <button id="btn-scroll-bottom" onclick="scrollToBottomSmooth()" class="fixed bottom-6 right-8 w-9 h-9 rounded-full bg-ag-surface border border-ag-border hover:border-ag-borderHover text-ag-text flex items-center justify-center shadow-xl transition opacity-0 pointer-events-none z-20" title="Scroll to latest message">
           <i data-lucide="arrow-down" class="w-4 h-4 text-cyan-400"></i>
         </button>
-      </div>
-
-      <!-- ================= 3. BOTTOM PROMPT BAR (IDENTICAL ANTIGRAVITY REPLICA) ================= -->
-      <div class="p-4 pb-4 shrink-0 bg-ag-chat/90 backdrop-blur-sm border-t border-ag-border/50 select-none">
-        <div class="max-w-[760px] mx-auto rounded-2xl bg-ag-surface border border-ag-border p-3 shadow-xl focus-within:border-cyan-500/50 transition">
-          <!-- Text Input / Step Jump -->
-          <div class="flex items-center gap-2">
-            <input type="text" id="chat-jump-input" placeholder="Jump to step (e.g. #100) or filter conversation..." onkeydown="handleChatJumpKey(event)" class="w-full bg-transparent text-xs text-ag-text placeholder-ag-muted focus:outline-none px-1">
-          </div>
-
-          <!-- Bottom Row: Model Pill & Jump Button -->
-          <div class="flex items-center justify-between pt-2.5 mt-2 border-t border-ag-border/40 text-xs">
-            <div class="flex items-center gap-1.5 text-ag-muted hover:text-ag-text cursor-pointer px-2 py-0.5 rounded-md hover:bg-ag-window transition" onclick="openSettingsModal()">
-              <span class="text-cyan-400 font-bold">+</span>
-              <span id="chat-model-label" class="font-medium text-[11.5px]">Gemini 3.8 Flash High</span>
-              <i data-lucide="chevron-up" class="w-3 h-3 text-ag-muted"></i>
-            </div>
-
-            <!-- Jump Circle Button -->
-            <button onclick="handleChatJumpSubmit()" class="w-7 h-7 rounded-full bg-cyan-600/20 hover:bg-cyan-600 text-cyan-400 hover:text-white flex items-center justify-center cursor-pointer transition shadow-sm" title="Jump to step or filter">
-              <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
-            </button>
-          </div>
-        </div>
       </div>
 
     </main>
@@ -639,7 +597,6 @@
             <div class="ag-code-header">
               <span>${language}</span>
               <div class="flex items-center gap-2 text-zinc-400">
-                <span class="hover:text-white cursor-pointer select-none">@</span>
                 <button onclick="copySnippet(this)" class="hover:text-white transition" title="Copy code">
                   <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                 </button>
@@ -1490,51 +1447,6 @@
       }
     }
 
-    // Chat Jump & Filter (Bottom Prompt Bar)
-    function handleChatJumpKey(event) {
-      if (event.key === 'Enter') {
-        handleChatJumpSubmit();
-      }
-    }
-
-    function handleChatJumpSubmit() {
-      const input = document.getElementById('chat-jump-input');
-      const val = (input?.value || '').trim();
-      if (!val) return;
-
-      const stepNum = parseInt(val.replace('#', ''));
-      if (!isNaN(stepNum)) {
-        const targetNode = document.querySelector(`.feed-node[data-step-index="${stepNum}"]`);
-        if (targetNode) {
-          targetNode.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          targetNode.classList.add('ring-2', 'ring-cyan-500', 'rounded-xl');
-          setTimeout(() => targetNode.classList.remove('ring-2', 'ring-cyan-500', 'rounded-xl'), 2500);
-          showToast(`Jumped to step #${stepNum}`, 'info');
-          input.value = '';
-          return;
-        } else {
-          showToast(`Step #${stepNum} not in view (click "Load all steps" if earlier)`, 'info');
-          return;
-        }
-      }
-
-      // Search text in chat feed
-      const nodes = document.querySelectorAll('.feed-node');
-      let matched = false;
-      for (const node of nodes) {
-        if (node.textContent.toLowerCase().includes(val.toLowerCase())) {
-          node.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          node.classList.add('ring-2', 'ring-cyan-500', 'rounded-xl');
-          setTimeout(() => node.classList.remove('ring-2', 'ring-cyan-500', 'rounded-xl'), 2500);
-          showToast(`Found match for "${val}"`, 'info');
-          matched = true;
-          break;
-        }
-      }
-      if (!matched) {
-        showToast(`No match found for "${val}"`, 'info');
-      }
-    }
 
     // Keyboard Shortcuts
     function setupKeyboardShortcuts() {

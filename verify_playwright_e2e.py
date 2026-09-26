@@ -12,17 +12,20 @@ if hasattr(sys.stdout, 'reconfigure'):
 ARTIFACT_DIR = r"C:\Users\PC\.gemini\antigravity\brain\f74d1ad5-f0d6-444e-b174-59e7d78ca3a8"
 os.makedirs(ARTIFACT_DIR, exist_ok=True)
 
+import socket
+
+def get_free_port():
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(('127.0.0.1', 0))
+        return s.getsockname()[1]
+
 def start_server():
-    for p in range(PORT, PORT + 20):
-        try:
-            server = HTTPServer(("127.0.0.1", p), AppHandler)
-            t = threading.Thread(target=server.serve_forever, daemon=True)
-            t.start()
-            time.sleep(0.5)
-            return server, p
-        except Exception:
-            continue
-    raise RuntimeError("Could not bind to any port")
+    port = get_free_port()
+    server = HTTPServer(("127.0.0.1", port), AppHandler)
+    t = threading.Thread(target=server.serve_forever, daemon=True)
+    t.start()
+    time.sleep(0.5)
+    return server, port
 
 def run_e2e_test():
     print("[E2E] Starting local backend server...", flush=True)
@@ -273,8 +276,8 @@ def run_e2e_test():
         print(f"[E2E] Scroll position: {scroll_top} / max {scroll_height - client_height}", flush=True)
         assert scroll_top > 0, "Chat feed did not immediately position at the bottom!"
 
-        # 11. Verify Exact Antigravity Chat UI & Thinking Block
-        print("[E2E] Verifying Thinking Block & Bottom Prompt Bar...", flush=True)
+        # 11. Verify Clean Chat UI without Gemini / Prompt Input / Fake Title Menus
+        print("[E2E] Verifying Thinking Block & absence of unnecessary buttons...", flush=True)
         thinking_nodes = page.locator("#chat-feed-scroll div[data-step-index]:has(div[id^='think_body_'])")
         if thinking_nodes.count() > 0:
             first_think = thinking_nodes.first
@@ -282,14 +285,24 @@ def run_e2e_test():
             print(f"[E2E] Thinking label snippet: {think_text[:60]}...", flush=True)
             assert "Thinking" in think_text or "Worked" in think_text, "Thinking label missing duration"
 
-        # Verify bottom bar elements
-        model_label = page.locator("#chat-model-label").inner_text()
-        print(f"[E2E] Bottom prompt bar model: '{model_label}'", flush=True)
-        assert "Gemini" in model_label, "Model label missing from bottom prompt bar"
+        # Assert Gemini button and prompt input are completely removed
+        assert page.locator("#chat-model-label").count() == 0, "Gemini button should be removed from app!"
+        assert page.locator("#chat-jump-input").count() == 0, "Prompt input should be removed from app!"
+        print("[E2E] Verified: Gemini button and prompt input are completely removed!", flush=True)
+
+        # Assert fake titlebar menus (File, Preferences, View, History) are removed
+        titlebar_text = page.locator("header").inner_text()
+        assert "File" not in titlebar_text, "Fake 'File' menu should be removed from titlebar"
+        assert "Preferences" not in titlebar_text, "Fake 'Preferences' menu should be removed from titlebar"
+        print("[E2E] Verified: Fake titlebar menus removed; clean native titlebar present!", flush=True)
 
         shot7 = os.path.join(ARTIFACT_DIR, "e2e_07_chat_ui_exact.png")
         page.screenshot(path=shot7)
         print(f"[E2E] Captured: {shot7}", flush=True)
+
+        shot8 = os.path.join(ARTIFACT_DIR, "e2e_08_clean_no_gemini.png")
+        page.screenshot(path=shot8)
+        print(f"[E2E] Captured: {shot8}", flush=True)
 
         # 12. Final assertion on browser dialogs
         print(f"[E2E] Browser dialogs/alerts encountered: {len(dialogs_encountered)}", flush=True)
