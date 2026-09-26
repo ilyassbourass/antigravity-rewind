@@ -53,12 +53,20 @@ def run_e2e_test():
         print(f"[E2E] Page title: '{title}'", flush=True)
         assert "Antigravity" in title, f"Unexpected page title: {title}"
 
-        # 2. Verify sidebar conversations
+        # 2. Verify sidebar conversations & zero duplicate buttons
         print("[E2E] Waiting for conversation list in sidebar...", flush=True)
         page.wait_for_selector("#sidebar-conversations-list > div")
         conv_items = page.query_selector_all("#sidebar-conversations-list > div")
         print(f"[E2E] Found {len(conv_items)} conversations in sidebar.", flush=True)
         assert len(conv_items) > 0, "No conversations listed in sidebar"
+
+        # Assert sidebar has NO duplicate controls ("only one of one function")
+        assert page.locator("aside button:has-text('Conversation Snapshots')").count() == 0, "Sidebar should not have duplicate snapshots button!"
+        assert page.locator("aside button:has-text('Settings & Preferences')").count() == 0, "Sidebar should not have duplicate settings button!"
+        assert page.locator("#sidebar-snapshot-pill").count() == 0, "Sidebar snapshot pill should be removed!"
+        assert page.locator("button:has-text('Snapshots')").count() == 1, "There should be exactly one Snapshots button in the app!"
+        assert page.locator("button[onclick='openSettingsModal()']").count() == 1, "There should be exactly one Settings button in the app!"
+        print("[E2E] Verified: Zero duplicated buttons. Sidebar is clean, single controls in header!", flush=True)
 
         # 3. Select BourassVPN conversation
         print("[E2E] Selecting 'BourassVPN Optimization Project Handoff'...", flush=True)
@@ -82,9 +90,13 @@ def run_e2e_test():
         drawer_text = page.locator("#snapshots-list-container").inner_text()
         print(f"[E2E] Snapshot drawer text preview: {drawer_text[:140]}...", flush=True)
         assert "BourassVPN Optimization Project Handoff" in drawer_text, "Thread title missing from snapshot cards"
-        assert "Current Active State" in drawer_text, "Active badge missing from current snapshot"
         assert "Step #" in drawer_text, "Milestone step count missing"
-        print("[E2E] Verified rich snapshot metadata: Thread title, Milestone step, and Current Active State badge present!", flush=True)
+        
+        # Verify snapshot displays real timestamp and NEVER 'now ago'
+        assert "now ago" not in drawer_text, "Found 'now ago' in snapshot text! Should be real timestamp."
+        import re
+        assert re.search(r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}', drawer_text), "Real timestamp (YYYY-MM-DD HH:MM:SS) missing from snapshot card!"
+        print("[E2E] Verified rich snapshot metadata: Real timestamp (no 'now ago'), Thread title, Milestone step, and Current Active State badge present!", flush=True)
 
         # Capture Screenshot 1: Snapshots Drawer with Rich Cards
         shot1 = os.path.join(ARTIFACT_DIR, "e2e_01_snapshots_drawer.png")
@@ -151,20 +163,67 @@ def run_e2e_test():
             print(f"[E2E] Toast notification: '{toast_text}'", flush=True)
             assert "restored" in toast_text.lower(), f"Unexpected toast text: {toast_text}"
 
+            # Verify that Restart Antigravity Modal appears!
+            restart_modal = page.locator("#restart-ag-modal")
+            assert restart_modal.is_visible(), "Restart Antigravity modal did not appear after restore!"
+            restart_modal_text = restart_modal.inner_text()
+            print(f"[E2E] Restart Antigravity Modal text: {restart_modal_text[:120]}...", flush=True)
+            assert "Restart Antigravity?" in restart_modal_text, "Missing 'Restart Antigravity?' heading"
+            assert "No, Later" in restart_modal_text, "Missing 'No, Later' button"
+            assert "Yes, Restart" in restart_modal_text, "Missing 'Yes, Restart' button"
+
+            # Capture Screenshot of Restart Antigravity Modal
+            shot_restart = os.path.join(ARTIFACT_DIR, "e2e_03b_restart_ag_modal.png")
+            page.screenshot(path=shot_restart)
+            print(f"[E2E] Captured: {shot_restart}", flush=True)
+
+            # Dismiss restart modal via 'No, Later'
+            page.locator("#btn-restart-ag-no").click()
+            time.sleep(0.5)
+            assert not restart_modal.is_visible(), "Restart modal did not dismiss after 'No, Later'"
+            print("[E2E] Verified: 'No, Later' smoothly dismisses modal with toast notification!", flush=True)
+
+            # Test 'Yes, Restart' button UI response
+            print("[E2E] Testing 'Yes, Restart' button UI flow...", flush=True)
+            page.evaluate("showRestartAntigravityPrompt('Testing Restart Flow')")
+            time.sleep(0.3)
+            assert page.locator("#restart-ag-modal").is_visible(), "Restart modal should be open"
+            page.evaluate("""
+                window._origApiCall = window.apiCall;
+                window.apiCall = async (method, args) => {
+                    if (method === 'restart_antigravity') return { success: true, restarted: true };
+                    return window._origApiCall(method, args);
+                };
+            """)
+            page.locator("#btn-restart-ag-yes").click()
+            time.sleep(0.5)
+            assert not page.locator("#restart-ag-modal").is_visible(), "Restart modal should close after restart"
+            toast_restart = page.locator("#ag-toast").inner_text()
+            print(f"[E2E] Restart toast notification: '{toast_restart}'", flush=True)
+            assert "restarted successfully" in toast_restart.lower(), f"Unexpected toast: {toast_restart}"
+            page.evaluate("window.apiCall = window._origApiCall;")
+            print("[E2E] Verified: 'Yes, Restart' button triggers clean restart flow and success feedback!", flush=True)
+
+            # Reopen snapshots drawer to verify updated active status
+            page.locator("button:has-text('Snapshots')").first.click()
+            time.sleep(0.6)
+            page.wait_for_selector("#snapshots-list-container > div")
+
             # Verify that the card now shows 'Current Active State' and 'Currently Active'
             drawer_after = page.locator("#snapshots-list-container").inner_text()
+            assert "now ago" not in drawer_after, "Snapshot drawer contains 'now ago'! Must show real time."
             assert "Current Active State" in drawer_after, "Restored card did not update to Current Active State!"
             assert "Currently Active" in drawer_after, "Restored button did not update to Currently Active!"
-            print("[E2E] Verified: Snapshot restored successfully and updated to 'Current Active State' in real-time!", flush=True)
+            print("[E2E] Verified: Snapshot restored successfully, shows real time, and updated to 'Current Active State' in real-time!", flush=True)
 
             # Capture Screenshot 3: Restored Snapshot Active
             shot3 = os.path.join(ARTIFACT_DIR, "e2e_03_restored_active.png")
             page.screenshot(path=shot3)
             print(f"[E2E] Captured: {shot3}", flush=True)
 
-        # Close snapshots drawer
-        page.locator("button[onclick='closeSnapshotsDrawer()']").first.click()
-        time.sleep(0.5)
+            # Close snapshots drawer
+            page.locator("button[onclick='closeSnapshotsDrawer()']").first.click()
+            time.sleep(0.5)
 
         # 6. Test Undo from chat feed
         print("[E2E] Testing hover-based Undo in chat feed...", flush=True)

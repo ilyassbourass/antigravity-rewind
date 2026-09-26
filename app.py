@@ -69,6 +69,8 @@ class AppHandler(SimpleHTTPRequestHandler):
                     res = backend.restore_backup(cid, bp)
                 elif method_name == "open_antigravity_folder":
                     res = backend.open_antigravity_folder()
+                elif method_name == "restart_antigravity":
+                    res = backend.restart_antigravity()
                 else:
                     res = {"error": f"Unknown method: {method_name}"}
             except Exception as e:

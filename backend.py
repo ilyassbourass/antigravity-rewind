@@ -118,7 +118,7 @@ class RewindBackend:
         now = time.time()
         diff = max(0, int(now - timestamp))
         if diff < 60:
-            return "now"
+            return "Just now"
         elif diff < 3600:
             return f"{diff // 60}m"
         elif diff < 86400:
@@ -1070,5 +1070,34 @@ class RewindBackend:
             else:
                 subprocess.Popen(["xdg-open", self.base_path])
             return {"success": True, "path": self.base_path}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def restart_antigravity(self):
+        try:
+            candidates = [
+                os.path.expandvars(r"%LOCALAPPDATA%\Programs\antigravity\Antigravity.exe"),
+                r"C:\Users\PC\AppData\Local\Programs\antigravity\Antigravity.exe",
+                os.path.expandvars(r"%PROGRAMFILES%\Antigravity\Antigravity.exe")
+            ]
+            exe_path = next((p for p in candidates if os.path.exists(p)), None)
+
+            # Terminate running Antigravity processes
+            if sys.platform == "win32":
+                subprocess.run(["taskkill", "/F", "/IM", "Antigravity.exe"], capture_output=True)
+            else:
+                subprocess.run(["pkill", "-f", "Antigravity"], capture_output=True)
+
+            import time
+            time.sleep(1.2)
+
+            if exe_path and os.path.exists(exe_path):
+                if sys.platform == "win32":
+                    os.startfile(exe_path)
+                else:
+                    subprocess.Popen([exe_path], start_new_session=True)
+                return {"success": True, "restarted": True, "path": exe_path}
+            else:
+                return {"success": True, "restarted": False, "message": "Antigravity terminated. Please launch it from desktop."}
         except Exception as e:
             return {"success": False, "error": str(e)}
