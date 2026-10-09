@@ -105,12 +105,44 @@ Want to explore an alternative architectural approach without losing your 500-st
 
 ---
 
+### 📜 6. Full-Height User Prompts Drawer & Fast Jump
+*Click the **Prompts** header button or press <kbd>Ctrl</kbd> + <kbd>P</kbd> to slide out a full-height drawer displaying every user instruction. Click any prompt card to instantly scroll directly to that exact turn with a glowing amber highlight.*
+
+![Full-Height User Prompts Drawer](docs/images/e2e_13_full_height_prompts_drawer.png)
+
+---
+
+### 🔍 7. Accurate In-Session Search
+*Press <kbd>Ctrl</kbd> + <kbd>F</kbd> or click **Find** to perform real-time, case-insensitive search across the entire conversation. Instantly highlights matching phrases with hit counter (`1/3`) and next/previous cycling.*
+
+![In-Session Search](docs/images/e2e_12_in_session_accurate_search.png)
+
+---
+
+### 📥 8. Markdown Session Export with Thinking & Tool Filters
+*Click **Export** or press <kbd>Ctrl</kbd> + <kbd>E</kbd> to open the Markdown Export modal. Granularly toggle whether to include internal `<thinking>` blocks and tool execution calls, then copy to clipboard or download as a `.md` file.*
+
+![Markdown Export Modal](docs/images/e2e_09_export_modal.png)
+
+---
+
+### 🏷️ 9. Human-Readable Resolved Conversation Titles
+*Never struggle with raw UUIDs again. Antigravity Rewind parses and caches human-readable intent summaries for every conversation automatically.*
+
+![Human-Readable Resolved Titles](docs/images/e2e_10_resolved_conversation_names.png)
+
+---
+
 ## ✨ Key Features
 
 | Feature | Description |
 | :--- | :--- |
 | **Surgical In-Chat Undo** | Injected controls beside every message, thinking block, file diff, and tool execution group. |
 | **Ghost Pruning Diff** | Real-time crimson preview showing exactly which turns will be pruned before you confirm. |
+| **Full-Height Prompts Drawer** | Slide-out right panel showing all user prompts in chronological order with instant jump-to-turn navigation. |
+| **Accurate In-Session Search** | Live regex/substring search bar (<kbd>Ctrl</kbd>+<kbd>F</kbd>) with match count, previous/next controls, and glowing mark highlights. |
+| **Markdown Session Export** | Granular export modal (<kbd>Ctrl</kbd>+<kbd>E</kbd>) with selective checkboxes for internal thinking traces and tool call executions. |
+| **Resolved Thread Titles** | Fast initial-turn title resolution that replaces cryptic UUID hashes with human-readable intent. |
 | **Restart Antigravity Prompt** | Automated modal that terminates `Antigravity.exe`, releases database locks, and relaunches the editor with 1 click. |
 | **Real Timestamp Snapshots** | Clean timestamping (`YYYY-MM-DD HH:MM:SS`) and active milestone badges for effortless session time travel. |
 | **Disappearing Thread Fixer** | Directly accesses `.gemini/antigravity` storage, recovering sessions hidden by UI glitches. |
@@ -182,8 +214,11 @@ build_exe.bat
 
 | Shortcut | Action |
 | :--- | :--- |
-| <kbd>Ctrl</kbd> + <kbd>R</kbd> | Refresh conversations and live feed |
+| <kbd>Ctrl</kbd> + <kbd>P</kbd> | Toggle User Prompts Drawer (Jump-to-turn navigation) |
+| <kbd>Ctrl</kbd> + <kbd>F</kbd> | Open In-Session Search Bar (with Next/Prev match cycling) |
+| <kbd>Ctrl</kbd> + <kbd>E</kbd> | Open Session Markdown Export Dialog |
 | <kbd>Ctrl</kbd> + <kbd>H</kbd> | Toggle History & Snapshots Drawer |
+| <kbd>Ctrl</kbd> + <kbd>R</kbd> | Refresh conversations and live feed |
 | <kbd>Ctrl</kbd> + <kbd>,</kbd> | Open Settings & Preferences Modal |
 | <kbd>Esc</kbd> | Close any open drawer, modal, or prompt |
 
@@ -202,13 +237,17 @@ python -m playwright install chromium
 python verify_playwright_e2e.py
 ```
 
-**Test Coverage:**
-- 100% of dialogs verified (zero browser alert leaks)
+**Test Coverage (16 E2E Tests):**
+- 100% of dialogs verified (zero native browser alert leaks)
 - Rollback execution & SQLite parity
 - In-drawer milestone restoration
 - "Restart Antigravity" modal triggering & dismissal
 - Real-time timestamp rendering
-- Instant tail-deque loading on large sessions
+- Instant tail-deque loading on large sessions (18,790+ steps)
+- Markdown session export across all 4 permutations (Thinking/Tools toggles)
+- Full-height Prompts drawer slide-out and jump-to-prompt card navigation
+- Accurate search hit highlighting, match counter, and cycling
+- Sidebar conversation title resolution (0 raw UUID leaks)
 
 ---
 

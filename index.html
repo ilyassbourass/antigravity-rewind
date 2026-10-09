@@ -6,37 +6,57 @@
   <title>Antigravity</title>
   <link rel="icon" type="image/x-icon" href="icon.ico">
   <link rel="icon" type="image/png" href="icon.png">
-  <!-- Local Offline Assets -->
+  <!-- Local Offline Assets with Automatic CDN Fallbacks -->
   <script src="tailwind.js"></script>
+  <script>
+    if (typeof tailwind === 'undefined') {
+      document.write('<script src="https://cdn.tailwindcss.com"><\/script>');
+    }
+  </script>
   <script src="lucide.js"></script>
+  <script>
+    if (typeof lucide === 'undefined') {
+      document.write('<script src="https://unpkg.com/lucide@latest"><\/script>');
+    }
+  </script>
   <script src="marked.js"></script>
   <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            ag: {
-              window: 'var(--ag-window)',
-              sidebar: 'var(--ag-sidebar)',
-              chat: 'var(--ag-chat)',
-              surface: 'var(--ag-surface)',
-              bubble: 'var(--ag-bubble)',
-              border: 'var(--ag-border)',
-              borderHover: 'var(--ag-border-hover)',
-              active: 'var(--ag-active)',
-              text: 'var(--ag-text)',
-              muted: 'var(--ag-muted)',
-              dim: 'var(--ag-dim)'
+    if (typeof marked === 'undefined') {
+      document.write('<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"><\/script>');
+    }
+  </script>
+  <script>
+    function configureTailwind() {
+      if (typeof tailwind !== 'undefined') {
+        tailwind.config = {
+          darkMode: 'class',
+          theme: {
+            extend: {
+              colors: {
+                ag: {
+                  window: 'var(--ag-window)',
+                  sidebar: 'var(--ag-sidebar)',
+                  chat: 'var(--ag-chat)',
+                  surface: 'var(--ag-surface)',
+                  bubble: 'var(--ag-bubble)',
+                  border: 'var(--ag-border)',
+                  borderHover: 'var(--ag-border-hover)',
+                  active: 'var(--ag-active)',
+                  text: 'var(--ag-text)',
+                  muted: 'var(--ag-muted)',
+                  dim: 'var(--ag-dim)'
+                }
+              },
+              fontFamily: {
+                sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+                mono: ['JetBrains Mono', 'Fira Code', 'Consolas', 'monospace']
+              }
             }
-          },
-          fontFamily: {
-            sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
-            mono: ['JetBrains Mono', 'Fira Code', 'Consolas', 'monospace']
           }
-        }
+        };
       }
     }
+    configureTailwind();
   </script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
@@ -212,6 +232,44 @@
       border-top: 1px solid rgba(255, 255, 255, 0.08);
       margin: 1rem 0;
     }
+
+    /* High-Visibility Jump Flash Pulse */
+    @keyframes jumpFlash {
+      0% { 
+        box-shadow: 0 0 0 3px rgba(56, 189, 248, 1), 0 0 32px rgba(56, 189, 248, 0.7);
+        outline: 2px solid #38bdf8;
+        background-color: rgba(56, 189, 248, 0.14);
+      }
+      65% { 
+        box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.5), 0 0 16px rgba(56, 189, 248, 0.35);
+        outline: 1px solid rgba(56, 189, 248, 0.6);
+        background-color: rgba(56, 189, 248, 0.05);
+      }
+      100% { 
+        box-shadow: none;
+        outline: none;
+        background-color: transparent;
+      }
+    }
+    .jump-flash {
+      animation: jumpFlash 1.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      border-radius: 8px;
+    }
+
+    /* In-Session Search Match Highlights */
+    mark.ag-search-match {
+      background-color: rgba(234, 179, 8, 0.35);
+      color: #fef08a;
+      border-radius: 3px;
+      padding: 0 2px;
+      transition: background-color 0.15s ease;
+    }
+    mark.ag-search-match.active {
+      background-color: rgba(245, 158, 11, 0.95);
+      color: #ffffff;
+      outline: 2px solid #38bdf8;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.7);
+    }
   </style>
 </head>
 <body class="h-screen w-screen flex flex-col overflow-hidden bg-ag-window text-ag-text">
@@ -219,7 +277,7 @@
   <!-- ================= 1. NATIVE WINDOW TITLEBAR ================= -->
   <header class="h-9 bg-ag-window border-b border-ag-border/50 px-3.5 flex items-center justify-between text-xs shrink-0 select-none">
     <div class="flex items-center gap-2 cursor-default">
-      <img src="icon.png" class="w-4 h-4 rounded-sm object-contain" alt="Logo">
+      <img src="data:image/png;base64,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" class="w-4 h-4 rounded-sm object-contain" alt="Logo">
       <span class="text-ag-text font-semibold tracking-tight">Antigravity</span>
       <span class="text-[10px] font-mono text-cyan-400 bg-cyan-500/10 px-1.5 py-0.5 rounded border border-cyan-500/20 font-medium">Rewind</span>
     </div>
@@ -242,7 +300,7 @@
       <!-- Top Action Bar -->
       <div class="p-3 pb-2 flex items-center justify-between text-ag-dim">
         <div class="flex items-center gap-2">
-          <img src="icon.png" class="w-5 h-5 rounded-md shadow-sm" alt="Logo">
+          <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAAALAklEQVR4nO3dP44jxxUH4OFCgAFioEQTyBfYxImyvYAT38HH8x2c+ALKlDiZC1jBKlkMBnAko2HTS1H803+qql/V+75kR1qJ003W+9Wr6ib59AQAAAAAAAAAAAAAAPTk8JTIx48//Lr3MdCH19efUtTGsCep2CntdcBQGOaEFDytvQ4QCIdMRf/588/1DoahvLx8nyIMDqMWvmJnj1B47SwIDiMVvqInShi8dhIEh94Lf2nRH4/f/ljimBjX+/uXT6XCIHoQHHos/LlFf63Yl7645HPcMG5uhUHUIDiMVPiXL5xip5TjwrHVSxCEOphbxT+38BU8rRxnjrlrQRApBMIcyNLiP09khc9ejjPGYeQQOPRa+IqeaI4PxmbEIDj0UvwKn14c7wRBtBA4RCr+e7O+GZ/eHO+M28sg2CsEDpGL36xPpm7gdYcQOEQufrM+ozjeGM97h8CHp8YUPxm9v3/5dO0Go8vJr/W7WpumzfnJafnJ6DhzSdCqEzhEKn4tP1kcZywJWoRAkyXAo7ZG8ZPN+40lQevlwIe91/yKn6zer4RA6z2BqgGg+CF2CDS7CmDmh/Uh0F0A3Nv00/bDshCo1QVUCQCf0At91FXxALDuh372A6ruAWj9IfZ+QNEAuJdO1v1Q5h6Bkl1AtQ7AR3RD/HoqFgB2/aG/qwLV7wPQ+kO924VDBMCjN/oAZZTuAqp2AGZ/iN0FbA4Asz/02wVU6wDM/hC/C9gUAG75hf1tqcNiHYDNP2inVL1VWQJo/6GPZcDqAND+Qxxr6/FD6XbE7A9tuoASy4Dm3wsAxCEAILFVAeDmHxjjpqCiHYD1P/R1NeCbUg9ETG9/+8fmx3j+65+LHAvxCIBBlCj0pY8tGPonADpVs+DXHoNA6M/iLx/0yT+5i34uYVDPtb22tV8qWqwDsAFYR09Ff+u4hUGdjcAS36ZtCRBUr4V/71wEQTwCIJCRiv4aXUE8AiCA0Qv/Gl1BDG4F3lnG4j+X/fz3pgNIMPC3rL1bHKduYD8CoLGaBVVjk+3WY9Y4D0HQngBoqHTR7Lmrfvm7S57b9FiuGLQhABooWRxRC+P8uEqcr26gDQHQSfFHLfx7x7r13Hs6514JgIqyF0DproDyBEAF2Qu/RFcw4nMQkQAIVPwZBv2cIMjwPEThRqCCFP98t4pc8belA9i5+DMP+FKbhaynAyhA8ZcJgsxhuBcdwA7Fb6B7TqLQAWyg+OmdAFhJ8TMCS4AGxa/lJyodwEKKn5EIgAUUP6MRAJVo++mBAKgw+yt+eiEAZlD8jMpVgMTF/8sv//r/z99998ddj4V96ACSOi/+a/9MDgIg2ew/Ffq9YhcEuQiARMV/6dT2n/5U/PkIgI16Kv5bbb/lQF4C4ArvTycLAZB09i/939MnAXDBh1aSiQA4o/UnGwEweOu/pZ23DBifAPgfrT8ZCYDBbZ3FdQFjEwADt/7wiAAYePOv1OytCxiXAEg++3sXYG7pA2DU2R/mSB8Ao5rTtl++GWjr49EfAZC4/YfUATBq+19rttYFjCd1AGSe/S/bfpuBOQkASCxtAGRu/2/N9jYD80kbAJnbfzgRAAPZMvvP/fu5v4c+CABILGUAjLj+bz0r6wLGkDIAsq7/517qc0kwDwEAiQmAAZTY/Fvz31sG9E8AQGICoHN7z8J7/362SRcAI14BqLWpZzNwfOkCIOsVALhGAHSsxubfmv/fMqBfAgASEwCdajH7L3kcXUCfBAAkJgA6FHW2jXpc3CYABlX6Ep5LgmMSAJCYAOhMy82/NY9rGdAXAQCJCYCO9DK79nKcCIDh1N6ssxk4Fh0AJCYAOrHn5t+a32MZ0AcBAIkJgA4+MyDS7L/k9+kC4ksXAN7rD199c/YzAd2aRf/w93/+9l/s0LVcHsO///Knq8fvykFc6ToA4CsBAIkJgMBG2UQb5TxGJAA6uRIANaQMgB6uBIw2a0Y4H6H+e64CdGracY+0ux6hwOeGQA8TQCspOwBy0wl8JQACDpSId/6Ndmfg9Nq+2efJGwDawFxuFftb8hBIGwBR9Tj799oFnGQOAQHwQObBkclb0tc5dQBEWwZEnB0znedbwhBIHQA9Doyo7X8vx/fIW7LNQQEAV2QJgfQBEGUZ0PPmX/TNwLXF/JYgBNIHwFwZBgMxJ4eaBECAFzrqpljm835OUPwTAdBJF9BL+9/r8WYs/ok3A0HCwj/RASx88Ut3ASNt/kXfDLznOWHxTwTACjYEx3qtnpMW/0QA7DgQRp79e+kCnhMX/0QABFkK0N5z8uKfCIANtoRAlLVvFK2fD8X/XwIg8ODovf1vdR5L79+P8vpGIAB26gKmohilwLfa8lycP/+PXoup8BX/bwmAG5YMlC1LgdPgvyyA0cLh2vltDcFrz/t5N3D+9wr/OgEQIAQydQWlzvHR86345xEAAY0aAnucl5n/PgEQrAvA89ySAJhBCMRht78sATCTENif4i9PAFRiOeD57IEAqLihJATKWPo82vibTwAsJATaUvx1CYBGIaAbeKr+nJn5lxMAK60ZbEKg3vOk+NcRABsIgfIUf1sCYKcQ0A2UeU7M/NsIgALWDkIhsO15UPzbCYAAIZA1CLacu+IvQwAUtGVQZguBLeer+MsRAMFCYPQg2HqOir8sXwxSwWmQbv1SypEG+9ZgG+m5iEQAVDQN2i0Dv/cPtSjVzfR47r2wBKis1ODtaXlQ8lgVf106gA6WBD10BaXDKdK5jUwAdLQkuHT5WC2LpmY3ovjbEQAddwOXbj1mL5cnFX57AmDAILgUfe9A4e/HJuDOsg/+7Oe/Nx1Asm4gCoUfgwAIWhQjhoGij0cABDVSV6Dw4xIAwfXaFSj6PgiAjkQPA0XfHwHQqcti2yMQFHz/BMAgbhVjiWBQ6OMSAINTvNzjRiBITABAYgIAEisWAO/vXz4dj9/+WOrxgOumOpvq7WmPAHh9/elw+vnl5fsSxwBscF6H5/U5hyUAJCYAIDEBAIkVDQAbgdDPBuDqALARCP1vAE4sASAxAQCJfSjdhtgHgDbr/xL34awOgDXrDaCOtfVYZQmgC4DYu//FA8BtwdBOqXrbFACWAbC/LXVY7SqAZQDEbv+LBICbgqCvm3+a3QegC4C4s3+xANAFQH+zf5M7AXUBEHP2LxoA97oAIQDbi7/07F+1A3BfAMSvp6IBcC+VdAFQpvUvef9N1T0ASwEo2/qXVjwALtNJCEC54i99922VDsAtwtBHXVVbArgqAPF2/Xf7RCBLAYix7m8WAPYDIN66v2kHIAQgZvE3WwI8Ogn3CJDNccZtvi0205t+rt/Hjz/8evr58+eff/f3p28Xrn3/M+zleGeMt9j0u9T8gz3PQ+BeEAgBRnO8Ma5bt/27fi/Aoz2BiSUBozkGLP7Jbh/tPbcTmP7UDTB6y7/XDXS7frb/nBCYWBLQo+OdpWyE4p/s/uUelyEw0Q2QZdbf+9b53QNgSQhMLAuI6vhgyRqt+MMEwJYgmNgjYC/HGeMwYuGfhDiItSFwoiugtePMDerIxT8JcyCPQmBJEJzoDCjluHBs3XozT6Tin4Q6mFJBcOtFmwgFao6bl04K/yTkQc0NgiVhcO/FhS2TxL237kYt/JPQB7ckCNaEAaz16P360Qv/pIuDXBoEE2FAaS8zPqSjl8I/6epg1wTBOaHAXC8LP5Gnt8I/6fKgS4QBbNVr0Z/r/gRuEQiU9jpAwV8a7oTuEQpkLnYAAAAAAAAAAAAA4GkU/wHG5EAWq9RJPgAAAABJRU5ErkJggg==" class="w-5 h-5 rounded-md shadow-sm" alt="Logo">
           <span class="font-semibold text-ag-text text-xs tracking-tight">Antigravity Rewind</span>
         </div>
       </div>
@@ -280,6 +338,25 @@
 
         <!-- Right Header Actions -->
         <div class="flex items-center gap-2 text-ag-dim">
+          <!-- In-Session Search button -->
+          <button id="header-search-btn" onclick="toggleSessionSearch()" class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg hover:bg-ag-surface text-xs font-medium text-ag-dim hover:text-ag-text transition border border-ag-border hover:border-ag-borderHover shadow-sm" title="Find in session (Ctrl+F)">
+            <i data-lucide="search" class="w-3.5 h-3.5 text-cyan-400"></i>
+            <span>Find</span>
+          </button>
+
+          <!-- Prompt Rail Toggle button -->
+          <button id="header-prompts-btn" onclick="togglePromptsDrawer()" class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg hover:bg-ag-surface text-xs font-medium text-ag-dim hover:text-ag-text transition border border-ag-border hover:border-ag-borderHover shadow-sm" title="Toggle User Prompts Panel (Ctrl+P)">
+            <i data-lucide="list-ordered" class="w-3.5 h-3.5 text-sky-400"></i>
+            <span>Prompts</span>
+            <span id="header-prompts-count" class="text-[10px] font-mono bg-sky-500/10 text-sky-400 px-1.5 py-0.2 rounded border border-sky-500/20 font-bold ml-0.5 hidden">0</span>
+          </button>
+
+          <!-- Export Session button -->
+          <button id="header-export-btn" onclick="openExportModal()" class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg hover:bg-ag-surface text-xs font-medium text-ag-dim hover:text-ag-text transition border border-ag-border hover:border-ag-borderHover shadow-sm" title="Export Session as Markdown (Ctrl+E)">
+            <i data-lucide="download" class="w-3.5 h-3.5 text-blue-400"></i>
+            <span>Export</span>
+          </button>
+
           <!-- Snapshots button -->
           <button onclick="openSnapshotsDrawer()" class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg hover:bg-ag-surface text-xs font-medium text-ag-dim hover:text-ag-text transition border border-ag-border hover:border-ag-borderHover shadow-sm" title="Conversation Snapshots (Ctrl+H)">
             <i data-lucide="history" class="w-3.5 h-3.5 text-cyan-400"></i>
@@ -304,20 +381,71 @@
         </div>
       </div>
 
-      <!-- Chat Feed Scroll Container -->
-      <div id="chat-feed-scroll" class="flex-1 overflow-y-auto px-6 py-6 relative select-text" onscroll="onFeedScroll()">
-        
-        <!-- Max width centered feed container (identical to Antigravity) -->
-        <div id="chat-feed-container" class="max-w-[760px] mx-auto space-y-5">
-          <div class="p-12 text-center text-ag-muted text-sm">
-            Loading chat trajectory...
+      <!-- In-Session Search Bar (Floating Finder) -->
+      <div id="session-search-bar" class="absolute top-14 right-6 z-30 hidden bg-ag-surface border border-ag-border rounded-xl shadow-2xl p-2 flex items-center gap-2 text-xs transition-all duration-150 transform scale-95 opacity-0" style="background-color: var(--ag-surface);">
+        <div class="relative flex items-center">
+          <i data-lucide="search" class="w-3.5 h-3.5 text-ag-muted absolute left-2.5 pointer-events-none"></i>
+          <input type="text" id="session-search-input" placeholder="Find in session..." class="bg-ag-window border border-ag-border rounded-lg pl-8 pr-16 py-1.5 text-xs text-ag-text placeholder-ag-muted focus:outline-none focus:border-cyan-500/60 w-64 transition" oninput="onSessionSearchInput(this.value)" onkeydown="onSessionSearchKeyDown(event)">
+          <span id="session-search-count" class="absolute right-2 text-[11px] font-mono text-ag-muted select-none">0/0</span>
+        </div>
+        <button id="session-search-case" onclick="toggleSessionSearchCase()" class="px-2 py-1 rounded text-[11px] font-mono text-ag-muted hover:text-ag-text hover:bg-white/5 border border-transparent transition" title="Match Case (Alt+C)">Aa</button>
+        <button id="session-search-prev" onclick="navigateSessionSearch(-1)" class="p-1 rounded text-ag-muted hover:text-ag-text hover:bg-white/5 transition" title="Previous match (Shift+Enter)">
+          <i data-lucide="chevron-up" class="w-4 h-4"></i>
+        </button>
+        <button id="session-search-next" onclick="navigateSessionSearch(1)" class="p-1 rounded text-ag-muted hover:text-ag-text hover:bg-white/5 transition" title="Next match (Enter)">
+          <i data-lucide="chevron-down" class="w-4 h-4"></i>
+        </button>
+        <button id="session-search-close" onclick="closeSessionSearch()" class="p-1 rounded text-ag-muted hover:text-ag-text hover:bg-white/5 transition" title="Close (Escape)">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Chat Workspace Area (Feed + Full-Height Right Prompts Panel) -->
+      <div class="flex-1 flex overflow-hidden relative">
+
+        <!-- Chat Feed Scroll Container -->
+        <div id="chat-feed-scroll" class="flex-1 overflow-y-auto px-6 py-6 relative select-text" onscroll="onFeedScroll()">
+          <!-- Max width centered feed container (identical to Antigravity) -->
+          <div id="chat-feed-container" class="max-w-[760px] mx-auto space-y-5">
+            <div class="p-12 text-center text-ag-muted text-sm">
+              Loading chat trajectory...
+            </div>
           </div>
+
+          <!-- Floating Scroll to Bottom Button -->
+          <button id="btn-scroll-bottom" onclick="scrollToBottomSmooth()" class="fixed bottom-6 right-8 w-9 h-9 rounded-full bg-ag-surface border border-ag-border hover:border-ag-borderHover text-ag-text flex items-center justify-center shadow-xl transition opacity-0 pointer-events-none z-20" title="Scroll to latest message">
+            <i data-lucide="arrow-down" class="w-4 h-4 text-cyan-400"></i>
+          </button>
         </div>
 
-        <!-- Floating Scroll to Bottom Button -->
-        <button id="btn-scroll-bottom" onclick="scrollToBottomSmooth()" class="fixed bottom-6 right-8 w-9 h-9 rounded-full bg-ag-surface border border-ag-border hover:border-ag-borderHover text-ag-text flex items-center justify-center shadow-xl transition opacity-0 pointer-events-none z-20" title="Scroll to latest message">
-          <i data-lucide="arrow-down" class="w-4 h-4 text-cyan-400"></i>
-        </button>
+        <!-- Full-Height Right Side Prompts Panel (Entire Right Side) -->
+        <aside id="prompts-drawer" class="w-80 bg-ag-sidebar border-l border-ag-border flex flex-col h-full shrink-0 select-none hidden z-20 transition-all duration-150">
+          <!-- Drawer Header -->
+          <div class="h-11 px-3.5 border-b border-ag-border flex items-center justify-between shrink-0 bg-ag-surface/40">
+            <div class="flex items-center gap-2">
+              <i data-lucide="list-ordered" class="w-4 h-4 text-sky-400"></i>
+              <span class="font-semibold text-xs text-ag-text">User Prompts</span>
+              <span id="prompts-drawer-count" class="text-[10px] font-mono bg-sky-500/10 text-sky-400 px-1.5 py-0.2 rounded border border-sky-500/20 font-bold">0</span>
+            </div>
+            <button onclick="togglePromptsDrawer(false)" class="p-1 rounded-md text-ag-muted hover:text-ag-text hover:bg-white/5 transition" title="Close Prompts Panel">
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+          </div>
+
+          <!-- Filter Search in Drawer -->
+          <div class="p-2.5 border-b border-ag-border/50 shrink-0">
+            <div class="relative">
+              <i data-lucide="search" class="w-3.5 h-3.5 text-ag-muted absolute left-2.5 top-2 pointer-events-none"></i>
+              <input type="text" id="prompts-filter-input" oninput="filterPromptsInDrawer(this.value)" placeholder="Search prompts in session..." class="w-full bg-ag-surface border border-ag-border rounded-lg pl-8 pr-2.5 py-1 text-xs text-ag-text placeholder-ag-muted focus:outline-none focus:border-sky-500/50 transition">
+            </div>
+          </div>
+
+          <!-- Prompts Scrollable List filling the whole remaining height -->
+          <div id="prompts-drawer-items" class="flex-1 overflow-y-auto p-2.5 space-y-2 select-text">
+            <!-- Dynamic prompt cards rendered here -->
+          </div>
+        </aside>
+
       </div>
 
     </main>
@@ -325,8 +453,8 @@
   </div>
 
   <!-- ================= INJECTED UNDO CONFIRMATION MODAL ================= -->
-  <div id="undo-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-150">
-    <div class="w-full max-w-md rounded-2xl bg-[#16161a] border border-ag-border p-6 shadow-2xl space-y-4 transform scale-95 transition-transform duration-150" id="undo-modal-box">
+  <div id="undo-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-150">
+    <div class="w-full max-w-md rounded-2xl bg-ag-surface border border-ag-border p-6 shadow-2xl space-y-4 transform scale-95 transition-transform duration-150" id="undo-modal-box" style="background-color: var(--ag-surface);">
       
       <!-- Modal Header -->
       <div class="flex items-center gap-3">
@@ -389,6 +517,86 @@
         <button onclick="executeInjectedUndo()" id="btn-modal-undo-exec" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold flex items-center gap-1.5 transition shadow-lg shadow-rose-600/25">
           <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
           <span>Rewind Now</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================= EXPORT SESSION AS MARKDOWN MODAL ================= -->
+  <div id="export-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-150">
+    <div class="w-full max-w-md rounded-2xl bg-ag-surface border border-ag-border p-6 shadow-2xl space-y-4 transform scale-95 transition-transform duration-150" id="export-modal-box" style="background-color: var(--ag-surface);">
+      
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between border-b border-ag-border/50 pb-3">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+            <i data-lucide="download" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="font-semibold text-sm text-white">Export Session as Markdown</h3>
+            <span class="text-[11.5px] text-ag-muted truncate max-w-xs block" id="export-modal-title">Conversation Title</span>
+          </div>
+        </div>
+        <button onclick="closeExportModal()" class="p-1 rounded hover:bg-white/10 text-ag-muted hover:text-white transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Description -->
+      <p class="text-xs text-ag-dim leading-relaxed">
+        Export this Antigravity session into clean, portable Markdown. Choose options to customize the output:
+      </p>
+
+      <!-- Two Checkboxes (Freebuff feature style) -->
+      <div class="space-y-2.5 text-xs text-ag-dim">
+        <label class="flex items-start gap-3 p-3.5 rounded-xl bg-ag-window border border-ag-border cursor-pointer hover:border-white/20 transition" style="background-color: var(--ag-window);">
+          <input type="checkbox" id="export-include-thinking" checked class="mt-0.5 w-4 h-4 rounded text-blue-500 bg-ag-surface border-ag-border cursor-pointer">
+          <div class="flex-1 select-none">
+            <div class="font-medium text-white flex items-center gap-1.5 mb-0.5">
+              <span>Include thinking</span>
+              <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">Reasoning</span>
+            </div>
+            <p class="text-[11px] text-ag-muted leading-relaxed">Include AI thinking traces, internal monologue & reasoning blocks.</p>
+          </div>
+        </label>
+
+        <label class="flex items-start gap-3 p-3.5 rounded-xl bg-ag-window border border-ag-border cursor-pointer hover:border-white/20 transition" style="background-color: var(--ag-window);">
+          <input type="checkbox" id="export-include-tools" checked class="mt-0.5 w-4 h-4 rounded text-blue-500 bg-ag-surface border-ag-border cursor-pointer">
+          <div class="flex-1 select-none">
+            <div class="font-medium text-white flex items-center gap-1.5 mb-0.5">
+              <span>Include tools and tool calling</span>
+              <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">Execution</span>
+            </div>
+            <p class="text-[11px] text-ag-muted leading-relaxed">Include tool calls, commands, file edits, inputs, and outputs.</p>
+          </div>
+        </label>
+      </div>
+
+      <!-- Export Meta Information -->
+      <div id="export-stats-container" class="p-3.5 rounded-xl bg-ag-window border border-ag-border font-mono text-[11px] space-y-1 text-ag-dim" style="background-color: var(--ag-window);">
+        <div class="flex justify-between text-zinc-300">
+          <span>Format:</span>
+          <span class="text-blue-400">GitHub Flavored Markdown (.md)</span>
+        </div>
+        <div class="flex justify-between text-zinc-400" id="export-stats-info">
+          <span>Session ID:</span>
+          <span class="text-ag-muted font-mono" id="export-stats-cid">--</span>
+        </div>
+      </div>
+
+      <!-- Actions: Cancel, Copy Markdown, Save Markdown -->
+      <div class="flex items-center justify-end gap-2.5 pt-2">
+        <button onclick="closeExportModal()" class="px-3.5 py-2 rounded-xl bg-ag-surface hover:bg-white/10 text-xs font-medium text-ag-dim hover:text-white transition">
+          Cancel
+        </button>
+        <button id="btn-copy-markdown" onclick="executeCopyMarkdown()" class="px-3.5 py-2 rounded-xl bg-ag-surface hover:bg-white/15 text-ag-text hover:text-white text-xs font-semibold flex items-center gap-1.5 transition border border-ag-border hover:border-ag-borderHover">
+          <i data-lucide="copy" class="w-3.5 h-3.5 text-zinc-400"></i>
+          <span>Copy Markdown</span>
+        </button>
+        <button id="btn-save-markdown" onclick="executeSaveMarkdown()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold flex items-center gap-1.5 transition shadow-lg shadow-blue-600/25">
+          <i data-lucide="download" class="w-3.5 h-3.5"></i>
+          <span>Save Markdown</span>
         </button>
       </div>
 
@@ -515,6 +723,10 @@
           </div>
           <div class="grid grid-cols-2 gap-2 text-[11px] font-mono">
             <div class="flex items-center justify-between p-1.5 rounded bg-ag-surface border border-ag-border/50">
+              <span class="text-ag-dim">Export</span>
+              <kbd class="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-ag-text">Ctrl + E</kbd>
+            </div>
+            <div class="flex items-center justify-between p-1.5 rounded bg-ag-surface border border-ag-border/50">
               <span class="text-ag-dim">Refresh</span>
               <kbd class="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-ag-text">Ctrl + R</kbd>
             </div>
@@ -523,12 +735,16 @@
               <kbd class="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-ag-text">Ctrl + H</kbd>
             </div>
             <div class="flex items-center justify-between p-1.5 rounded bg-ag-surface border border-ag-border/50">
-              <span class="text-ag-dim">Close Modal</span>
-              <kbd class="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-ag-text">Esc</kbd>
-            </div>
-            <div class="flex items-center justify-between p-1.5 rounded bg-ag-surface border border-ag-border/50">
               <span class="text-ag-dim">Settings</span>
               <kbd class="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-ag-text">Ctrl + ,</kbd>
+            </div>
+            <div class="flex items-center justify-between p-1.5 rounded bg-ag-surface border border-ag-border/50">
+              <span class="text-ag-dim">Find in Session</span>
+              <kbd class="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-ag-text">Ctrl + F</kbd>
+            </div>
+            <div class="flex items-center justify-between p-1.5 rounded bg-ag-surface border border-ag-border/50">
+              <span class="text-ag-dim">Close Finder / Modals</span>
+              <kbd class="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-ag-text">Esc</kbd>
             </div>
           </div>
         </div>
@@ -601,7 +817,18 @@
       activeConv: null,
       feedItems: [],
       totalStepsCount: 0,
-      activeUndoPayload: null
+      activeUndoPayload: null,
+      // Prompt Rail State (Freebuff style user message navigator)
+      promptRailPinned: localStorage.getItem('ag_prompt_rail_pinned') === '1',
+      userPrompts: [],
+      activePromptStep: null,
+      // In-Session Search State (Accurate In-Thread Finder)
+      sessionSearchOpen: false,
+      sessionSearchQuery: '',
+      sessionSearchCaseSensitive: false,
+      sessionSearchMatches: [],
+      sessionSearchIndex: 0,
+      sessionSearchBackendTotal: 0
     };
 
     // Configure Marked.js for exact Antigravity styling
@@ -641,17 +868,39 @@
         return `<h4>${text}</h4>`;
       };
 
-      marked.use({ renderer, gfm: true, breaks: true });
+      if (typeof marked !== 'undefined' && marked && marked.use) {
+        marked.use({ renderer, gfm: true, breaks: true });
+      }
+    }
+
+    function safeCreateIcons() {
+      try {
+        if (typeof lucide !== 'undefined' && lucide && typeof lucide.createIcons === 'function') {
+          safeCreateIcons();
+        }
+      } catch (e) {
+        console.warn('safeCreateIcons warning:', e);
+      }
     }
 
     let currentSearchQuery = '';
 
     window.addEventListener('DOMContentLoaded', async () => {
-      setTheme(getTheme());
-      setupMarked();
-      lucide.createIcons();
-      await refreshData();
-      setupKeyboardShortcuts();
+      try {
+        setTheme(getTheme());
+      } catch (e) { console.error('setTheme error:', e); }
+      try {
+        setupMarked();
+      } catch (e) { console.error('setupMarked error:', e); }
+      safeCreateIcons();
+      try {
+        await refreshData();
+      } catch (e) {
+        console.error('refreshData error:', e);
+      }
+      try {
+        setupKeyboardShortcuts();
+      } catch (e) { console.error('setupKeyboardShortcuts error:', e); }
     });
 
     // Theme Management (Dark & Light)
@@ -690,7 +939,7 @@
           btnLight.className = "flex-1 py-2 px-3 rounded-lg border border-ag-border bg-ag-surface text-ag-muted hover:text-ag-text font-medium flex items-center justify-center gap-2 transition";
         }
       }
-      lucide.createIcons();
+      safeCreateIcons();
     }
 
     function toggleTheme() {
@@ -763,7 +1012,429 @@
         `;
       }).join('');
 
-      lucide.createIcons();
+      safeCreateIcons();
+      renderPromptsDrawer();
+      if (state.sessionSearchQuery) {
+        onSessionSearchInput(state.sessionSearchQuery);
+      }
+    }
+
+    // ================= FULL-HEIGHT RIGHT USER PROMPTS DRAWER =================
+    function togglePromptsDrawer(forceOpen) {
+      const drawer = document.getElementById('prompts-drawer');
+      const btn = document.getElementById('header-prompts-btn');
+      if (!drawer) return;
+
+      const isHidden = drawer.classList.contains('hidden');
+      const shouldOpen = (typeof forceOpen === 'boolean') ? forceOpen : isHidden;
+      state.promptsDrawerOpen = shouldOpen;
+      localStorage.setItem('ag_prompts_drawer_open', shouldOpen ? '1' : '0');
+
+      if (shouldOpen) {
+        drawer.classList.remove('hidden');
+        if (btn) {
+          btn.classList.add('bg-sky-500/20', 'text-sky-300', 'border-sky-500/40');
+        }
+        renderPromptsDrawer();
+      } else {
+        drawer.classList.add('hidden');
+        if (btn) {
+          btn.classList.remove('bg-sky-500/20', 'text-sky-300', 'border-sky-500/40');
+        }
+      }
+    }
+
+    function filterPromptsInDrawer(query) {
+      state.promptsFilterQuery = (query || '').toLowerCase().trim();
+      renderPromptsDrawer();
+    }
+
+    function renderPromptsDrawer() {
+      const drawer = document.getElementById('prompts-drawer');
+      const container = document.getElementById('prompts-drawer-items');
+      const countBadge = document.getElementById('prompts-drawer-count');
+      const headerCount = document.getElementById('header-prompts-count');
+      if (!container) return;
+
+      const userItems = (state.userPrompts && state.userPrompts.length > 0)
+        ? state.userPrompts
+        : (state.feedItems || []).filter(item => item.type === 'user');
+      state.userPrompts = userItems;
+
+      if (countBadge) countBadge.textContent = userItems.length;
+      if (headerCount) {
+        headerCount.textContent = userItems.length;
+        if (userItems.length > 0) {
+          headerCount.classList.remove('hidden');
+        } else {
+          headerCount.classList.add('hidden');
+        }
+      }
+
+      if (userItems.length === 0) {
+        container.innerHTML = `
+          <div class="p-8 text-center text-ag-muted text-xs">
+            No user prompts found in this session.
+          </div>
+        `;
+        return;
+      }
+
+      const query = (state.promptsFilterQuery || '').toLowerCase().trim();
+      const filtered = query
+        ? userItems.filter(p => (p.text || '').toLowerCase().includes(query))
+        : userItems;
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="p-6 text-center text-ag-muted text-xs">
+            No prompts matching "${escapeHtml(query)}"
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map((item, idx) => {
+        const fullText = (item.text || '').replace(/\s+/g, ' ').trim();
+        const sIdx = item.step_index;
+        const turnNum = idx + 1;
+        const isActive = (state.activePromptStep === sIdx);
+
+        return `
+          <div onclick="jumpToUserPrompt(${sIdx})" 
+               class="prompt-card p-3 rounded-xl border cursor-pointer transition text-left group select-none ${
+                 isActive 
+                   ? 'bg-sky-500/10 border-sky-500/50 shadow-md shadow-sky-500/5' 
+                   : 'bg-ag-surface/50 hover:bg-ag-surface border-ag-border hover:border-sky-500/30'
+               }" 
+               data-step-index="${sIdx}">
+            <div class="flex items-center justify-between gap-1 mb-1.5">
+              <div class="flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full ${isActive ? 'bg-sky-400' : 'bg-sky-400/50 group-hover:bg-sky-400'} transition-colors"></span>
+                <span class="text-[11px] font-semibold ${isActive ? 'text-sky-300' : 'text-sky-400/90'} font-mono uppercase tracking-wider">Turn #${turnNum}</span>
+              </div>
+              <span class="text-[10px] font-mono text-ag-muted">Step #${sIdx}</span>
+            </div>
+            <p class="text-xs text-ag-text line-clamp-3 leading-relaxed break-words font-sans">
+              ${escapeHtml(fullText)}
+            </p>
+          </div>
+        `;
+      }).join('');
+
+      safeCreateIcons();
+    }
+
+    async function jumpToUserPrompt(stepIndex) {
+      const feed = document.getElementById('chat-feed-scroll');
+      if (!feed) return;
+      let target = feed.querySelector(`.feed-node[data-step-index="${stepIndex}"]`);
+      if (!target) {
+        showToast('Loading trajectory to navigate to prompt...', 'info');
+        await loadCompleteChatHistory();
+        target = feed.querySelector(`.feed-node[data-step-index="${stepIndex}"]`);
+      }
+      if (!target) {
+        showToast(`Prompt at Step #${stepIndex} not in feed`, 'error');
+        return;
+      }
+
+      // Smooth scroll directly to the prompt element centered in view
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+      // Apply high-visibility jump-flash halo highlight animation
+      target.classList.remove('jump-flash');
+      void target.offsetWidth;
+      target.classList.add('jump-flash');
+      setTimeout(() => target.classList.remove('jump-flash'), 2200);
+
+      state.activePromptStep = stepIndex;
+
+      // Update active highlight on cards in drawer
+      const cards = document.querySelectorAll('#prompts-drawer-items .prompt-card');
+      cards.forEach(card => {
+        const s = parseInt(card.getAttribute('data-step-index'), 10);
+        if (s === stepIndex) {
+          card.classList.add('bg-sky-500/10', 'border-sky-500/50');
+          card.classList.remove('bg-ag-surface/50', 'border-ag-border');
+          card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } else {
+          card.classList.remove('bg-sky-500/10', 'border-sky-500/50');
+          card.classList.add('bg-ag-surface/50', 'border-ag-border');
+        }
+      });
+    }
+
+    let scrollRailAnim = 0;
+    function updateActivePromptOnScroll() {
+      const feed = document.getElementById('chat-feed-scroll');
+      if (!feed) return;
+      const userNodes = feed.querySelectorAll('.feed-node[data-turn-type="user"]');
+      if (!userNodes.length) return;
+
+      const feedTop = feed.getBoundingClientRect().top;
+      let activeStep = null;
+
+      for (const node of userNodes) {
+        const rect = node.getBoundingClientRect();
+        if (rect.top - feedTop <= 220) {
+          activeStep = parseInt(node.getAttribute('data-step-index'), 10);
+        } else {
+          break;
+        }
+      }
+
+      if (activeStep === null && userNodes.length > 0) {
+        activeStep = parseInt(userNodes[0].getAttribute('data-step-index'), 10);
+      }
+
+      if (activeStep !== null && activeStep !== state.activePromptStep) {
+        state.activePromptStep = activeStep;
+        const cards = document.querySelectorAll('#prompts-drawer-items .prompt-card');
+        cards.forEach(card => {
+          const step = parseInt(card.getAttribute('data-step-index'), 10);
+          if (step === activeStep) {
+            card.classList.add('bg-sky-500/10', 'border-sky-500/50');
+            card.classList.remove('bg-ag-surface/50', 'border-ag-border');
+          } else {
+            card.classList.remove('bg-sky-500/10', 'border-sky-500/50');
+            card.classList.add('bg-ag-surface/50', 'border-ag-border');
+          }
+        });
+      }
+    }
+
+    // ================= IN-SESSION ACCURATE SEARCH =================
+    function toggleSessionSearch() {
+      if (state.sessionSearchOpen) {
+        closeSessionSearch();
+      } else {
+        openSessionSearch();
+      }
+    }
+
+    function openSessionSearch() {
+      const bar = document.getElementById('session-search-bar');
+      const input = document.getElementById('session-search-input');
+      if (!bar || !input) return;
+
+      state.sessionSearchOpen = true;
+      bar.classList.remove('hidden');
+      setTimeout(() => {
+        bar.classList.remove('scale-95', 'opacity-0');
+      }, 10);
+      input.focus();
+      input.select();
+
+      if (input.value.trim()) {
+        onSessionSearchInput(input.value);
+      }
+    }
+
+    function closeSessionSearch() {
+      const bar = document.getElementById('session-search-bar');
+      if (!bar) return;
+      state.sessionSearchOpen = false;
+      bar.classList.add('scale-95', 'opacity-0');
+      setTimeout(() => {
+        bar.classList.add('hidden');
+      }, 150);
+
+      clearSessionSearchHighlights();
+      const countLabel = document.getElementById('session-search-count');
+      if (countLabel) countLabel.textContent = '0/0';
+    }
+
+    function toggleSessionSearchCase() {
+      state.sessionSearchCaseSensitive = !state.sessionSearchCaseSensitive;
+      const btn = document.getElementById('session-search-case');
+      if (btn) {
+        if (state.sessionSearchCaseSensitive) {
+          btn.classList.add('bg-cyan-500/20', 'text-cyan-400', 'border-cyan-500/40');
+          btn.classList.remove('border-transparent', 'text-ag-muted');
+        } else {
+          btn.classList.remove('bg-cyan-500/20', 'text-cyan-400', 'border-cyan-500/40');
+          btn.classList.add('border-transparent', 'text-ag-muted');
+        }
+      }
+      const input = document.getElementById('session-search-input');
+      if (input && input.value) {
+        onSessionSearchInput(input.value);
+      }
+    }
+
+    function clearSessionSearchHighlights() {
+      const container = document.getElementById('chat-feed-container');
+      if (!container) return;
+      const marks = container.querySelectorAll('mark.ag-search-match');
+      marks.forEach(m => {
+        const parent = m.parentNode;
+        if (parent) {
+          parent.replaceChild(document.createTextNode(m.textContent), m);
+          parent.normalize();
+        }
+      });
+      state.sessionSearchMatches = [];
+      state.sessionSearchIndex = 0;
+      state.sessionSearchBackendTotal = 0;
+    }
+
+    let searchDebounceTimer = null;
+    function onSessionSearchInput(query) {
+      state.sessionSearchQuery = query;
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => {
+        executeSessionSearch(query);
+      }, 60);
+    }
+
+    function executeSessionSearch(query) {
+      clearSessionSearchHighlights();
+      const countLabel = document.getElementById('session-search-count');
+      const trimmed = (query || '').trim();
+
+      if (!trimmed) {
+        if (countLabel) countLabel.textContent = '0/0';
+        return;
+      }
+
+      const container = document.getElementById('chat-feed-container');
+      if (!container) return;
+
+      const caseSensitive = state.sessionSearchCaseSensitive;
+      const escaped = trimmed.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`(${escaped})`, caseSensitive ? 'g' : 'gi');
+
+      // TreeWalker to safely find and wrap text nodes without breaking HTML structure
+      const walker = document.createTreeWalker(
+        container,
+        NodeFilter.SHOW_TEXT,
+        {
+          acceptNode: function(node) {
+            const parentName = node.parentNode ? node.parentNode.nodeName : '';
+            if (parentName === 'SCRIPT' || parentName === 'STYLE' || parentName === 'BUTTON' || parentName === 'INPUT') {
+              return NodeFilter.FILTER_REJECT;
+            }
+            if (node.parentNode && node.parentNode.closest('#prompt-rail')) {
+              return NodeFilter.FILTER_REJECT;
+            }
+            if (regex.test(node.nodeValue)) {
+              regex.lastIndex = 0;
+              return NodeFilter.FILTER_ACCEPT;
+            }
+            regex.lastIndex = 0;
+            return NodeFilter.FILTER_SKIP;
+          }
+        }
+      );
+
+      const textNodes = [];
+      while (walker.nextNode()) {
+        textNodes.push(walker.currentNode);
+      }
+
+      const matchMarks = [];
+      for (const node of textNodes) {
+        const text = node.nodeValue;
+        regex.lastIndex = 0;
+        const matches = [];
+        let m;
+        while ((m = regex.exec(text)) !== null) {
+          matches.push({ index: m.index, length: m[0].length, text: m[0] });
+        }
+
+        if (matches.length > 0) {
+          const fragment = document.createDocumentFragment();
+          let lastIdx = 0;
+          for (const match of matches) {
+            if (match.index > lastIdx) {
+              fragment.appendChild(document.createTextNode(text.substring(lastIdx, match.index)));
+            }
+            const mark = document.createElement('mark');
+            mark.className = 'ag-search-match';
+            mark.textContent = match.text;
+            fragment.appendChild(mark);
+            matchMarks.push(mark);
+            lastIdx = match.index + match.length;
+          }
+          if (lastIdx < text.length) {
+            fragment.appendChild(document.createTextNode(text.substring(lastIdx)));
+          }
+          if (node.parentNode) {
+            node.parentNode.replaceChild(fragment, node);
+          }
+        }
+      }
+
+      state.sessionSearchMatches = matchMarks;
+      state.sessionSearchIndex = 0;
+
+      if (matchMarks.length > 0) {
+        if (countLabel) countLabel.textContent = `1/${matchMarks.length}`;
+        activateCurrentSearchMatch();
+      } else {
+        if (countLabel) countLabel.textContent = '0/0';
+      }
+
+      // Check backend transcript search in background for total accuracy
+      if (state.activeConvId) {
+        apiCall('search_session', [state.activeConvId, trimmed, caseSensitive]).then(bRes => {
+          if (bRes && bRes.success && bRes.total_matches > matchMarks.length) {
+            state.sessionSearchBackendTotal = bRes.total_matches;
+            if (countLabel) {
+              countLabel.textContent = `${matchMarks.length > 0 ? (state.sessionSearchIndex + 1) : 0}/${matchMarks.length} (${bRes.total_matches} in history)`;
+              countLabel.title = `${bRes.total_matches} total matches in complete session transcript. Click 'Load all steps' to reveal all earlier matches.`;
+            }
+          }
+        }).catch(() => {});
+      }
+    }
+
+    function activateCurrentSearchMatch() {
+      const matches = state.sessionSearchMatches;
+      if (!matches || matches.length === 0) return;
+
+      matches.forEach(m => m.classList.remove('active'));
+      const activeMark = matches[state.sessionSearchIndex];
+      if (!activeMark) return;
+
+      activeMark.classList.add('active');
+
+      // CRITICAL ACCURACY FEATURE: If match is inside a collapsed <details> (e.g. thinking or tools), auto-expand it!
+      const detailsParent = activeMark.closest('details');
+      if (detailsParent && !detailsParent.open) {
+        detailsParent.open = true;
+      }
+
+      // Smoothly scroll active match into center view
+      activeMark.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+      const countLabel = document.getElementById('session-search-count');
+      if (countLabel) {
+        if (state.sessionSearchBackendTotal > matches.length) {
+          countLabel.textContent = `${state.sessionSearchIndex + 1}/${matches.length} (${state.sessionSearchBackendTotal} in history)`;
+        } else {
+          countLabel.textContent = `${state.sessionSearchIndex + 1}/${matches.length}`;
+        }
+      }
+    }
+
+    function navigateSessionSearch(direction) {
+      const matches = state.sessionSearchMatches;
+      if (!matches || matches.length === 0) return;
+
+      state.sessionSearchIndex = (state.sessionSearchIndex + direction + matches.length) % matches.length;
+      activateCurrentSearchMatch();
+    }
+
+    function onSessionSearchKeyDown(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        navigateSessionSearch(e.shiftKey ? -1 : 1);
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        closeSessionSearch();
+      }
     }
 
     // Select Conversation & Load Chat Feed (Instant & Responsive)
@@ -788,15 +1459,25 @@
           <span class="text-xs font-mono">Loading conversation trajectory...</span>
         </div>
       `;
-      lucide.createIcons();
+      safeCreateIcons();
 
-      // Load chat feed items from backend (Default fast tail load: 250 items)
+      // Fast tail load (250 items) for instant initial render (< 0.1s)
       const feed = await apiCall('get_chat_feed', [cid, 250]);
       state.feedItems = Array.isArray(feed) ? feed : [];
       state.totalStepsCount = state.activeConv ? (state.activeConv.step_count || 0) : state.feedItems.length;
+      state.userPrompts = state.feedItems.filter(item => item.type === 'user');
 
       renderChatFeed();
+      renderPromptsDrawer();
       loadSnapshotsCount();
+
+      // Fetch all prompts across the entire history asynchronously
+      apiCall('get_conversation_prompts', [cid]).then(prompts => {
+        if (state.activeConvId === cid && Array.isArray(prompts) && prompts.length > 0) {
+          state.userPrompts = prompts;
+          renderPromptsDrawer();
+        }
+      });
 
       // Instant bottom jump (Zero scroll lag!)
       jumpToBottomInstant();
@@ -846,7 +1527,7 @@
         // USER MESSAGE CARD
         if (item.type === 'user') {
           return `
-            <div class="relative group/user feed-node" data-step-index="${sIdx}">
+            <div class="relative group/user feed-node" data-step-index="${sIdx}" data-turn-type="user" id="user-turn-${sIdx}">
               <!-- Injected Undo Action (Hover) -->
               <div class="absolute -top-3 right-3 z-10 opacity-0 group-hover/user:opacity-100 transition-opacity">
                 <button onclick="promptUndo(${undoTarget}, ${keepTarget}, 'User Request')" onmouseenter="previewGhostPrune(${sIdx})" onmouseleave="clearGhostPrune()" class="px-2.5 py-1 rounded-full bg-[#27272a] hover:bg-rose-600 border border-white/10 hover:border-rose-500 text-white text-[11px] font-medium flex items-center gap-1.5 shadow-xl transition" title="Undo this prompt and response">
@@ -995,7 +1676,7 @@
         return '';
       }).join('');
 
-      lucide.createIcons();
+      safeCreateIcons();
     }
 
     // Markdown parse using marked.js
@@ -1129,7 +1810,7 @@
 
       btn.disabled = true;
       btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> Rewinding...`;
-      lucide.createIcons();
+      safeCreateIcons();
 
       try {
         const res = await apiCall('perform_rollback', [
@@ -1151,7 +1832,7 @@
       } finally {
         btn.disabled = false;
         btn.innerHTML = `<i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Rewind Now`;
-        lucide.createIcons();
+        safeCreateIcons();
       }
     }
 
@@ -1205,7 +1886,7 @@
       if (btn) {
         btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i><span>Restoring...</span>`;
         btn.disabled = true;
-        lucide.createIcons();
+        safeCreateIcons();
       }
 
       showToast('Restoring conversation...', 'info');
@@ -1221,7 +1902,7 @@
         if (btn) {
           btn.innerHTML = `<i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i><span>Confirm & Restore</span>`;
           btn.disabled = false;
-          lucide.createIcons();
+          safeCreateIcons();
         }
       }
     }
@@ -1255,7 +1936,7 @@
       if (btn) {
         btn.disabled = true;
         btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i><span>Restarting...</span>`;
-        lucide.createIcons();
+        safeCreateIcons();
       }
 
       try {
@@ -1277,7 +1958,7 @@
         if (btn) {
           btn.disabled = false;
           btn.innerHTML = `<i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i><span>Yes, Restart</span>`;
-          lucide.createIcons();
+          safeCreateIcons();
         }
       }
     }
@@ -1287,7 +1968,7 @@
       if (btn) {
         btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i><span>Deleting...</span>`;
         btn.disabled = true;
-        lucide.createIcons();
+        safeCreateIcons();
       }
 
       const res = await apiCall('delete_backup', [state.activeConvId, backupName]);
@@ -1311,7 +1992,7 @@
             <div class="text-[11px] text-ag-muted/70">Take a manual snapshot above or undo a message to create one.</div>
           </div>
         `;
-        lucide.createIcons();
+        safeCreateIcons();
         return;
       }
 
@@ -1437,7 +2118,7 @@
         `;
       }).join('');
 
-      lucide.createIcons();
+      safeCreateIcons();
     }
 
     async function renderSnapshotsList() {
@@ -1481,12 +2162,21 @@
     function onFeedScroll() {
       const feed = document.getElementById('chat-feed-scroll');
       const btn = document.getElementById('btn-scroll-bottom');
-      if (!feed || !btn) return;
-      const isScrolledUp = (feed.scrollHeight - feed.scrollTop - feed.clientHeight) > 200;
-      if (isScrolledUp) {
-        btn.classList.remove('opacity-0', 'pointer-events-none');
-      } else {
-        btn.classList.add('opacity-0', 'pointer-events-none');
+      if (!feed) return;
+      if (btn) {
+        const isScrolledUp = (feed.scrollHeight - feed.scrollTop - feed.clientHeight) > 200;
+        if (isScrolledUp) {
+          btn.classList.remove('opacity-0', 'pointer-events-none');
+        } else {
+          btn.classList.add('opacity-0', 'pointer-events-none');
+        }
+      }
+
+      if (!scrollRailAnim) {
+        scrollRailAnim = requestAnimationFrame(() => {
+          scrollRailAnim = 0;
+          updateActivePromptOnScroll();
+        });
       }
     }
 
@@ -1522,14 +2212,129 @@
       }
     }
 
+    // Export Session as Markdown Modal
+    function openExportModal() {
+      if (!state.activeConvId) {
+        showToast('Please select a conversation first', 'error');
+        return;
+      }
+      const modal = document.getElementById('export-modal');
+      const box = document.getElementById('export-modal-box');
+      if (!modal || !box) return;
+
+      const titleEl = document.getElementById('export-modal-title');
+      const cidEl = document.getElementById('export-stats-cid');
+      const curTitle = state.activeConv ? state.activeConv.title : state.activeConvId;
+      if (titleEl) titleEl.textContent = curTitle;
+      if (cidEl) cidEl.textContent = state.activeConvId;
+
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        box.classList.remove('scale-95');
+      }, 10);
+      safeCreateIcons();
+    }
+
+    function closeExportModal() {
+      const modal = document.getElementById('export-modal');
+      const box = document.getElementById('export-modal-box');
+      if (!modal || !box) return;
+      modal.classList.add('opacity-0');
+      box.classList.add('scale-95');
+      setTimeout(() => modal.classList.add('hidden'), 150);
+    }
+
+    async function executeCopyMarkdown() {
+      if (!state.activeConvId) return;
+      const btn = document.getElementById('btn-copy-markdown');
+      const origHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i><span>Exporting...</span>`;
+      safeCreateIcons();
+
+      const includeThinking = document.getElementById('export-include-thinking')?.checked ?? true;
+      const includeTools = document.getElementById('export-include-tools')?.checked ?? true;
+
+      try {
+        const res = await apiCall('export_conversation_markdown', [state.activeConvId, includeThinking, includeTools]);
+        if (res && res.success && res.markdown) {
+          await navigator.clipboard.writeText(res.markdown);
+          showToast(`Markdown copied to clipboard (${res.stats?.lines || 0} lines)!`, 'success');
+          closeExportModal();
+        } else {
+          showToast(`Export failed: ${res?.error || 'Unknown error'}`, 'error');
+        }
+      } catch (err) {
+        showToast(`Copy failed: ${err.message}`, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = origHtml;
+        safeCreateIcons();
+      }
+    }
+
+    async function executeSaveMarkdown() {
+      if (!state.activeConvId) return;
+      const btn = document.getElementById('btn-save-markdown');
+      const origHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i><span>Generating...</span>`;
+      safeCreateIcons();
+
+      const includeThinking = document.getElementById('export-include-thinking')?.checked ?? true;
+      const includeTools = document.getElementById('export-include-tools')?.checked ?? true;
+
+      try {
+        const res = await apiCall('export_conversation_markdown', [state.activeConvId, includeThinking, includeTools]);
+        if (res && res.success && res.markdown) {
+          const blob = new Blob([res.markdown], { type: 'text/markdown;charset=utf-8' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = res.filename || `${state.activeConvId}.md`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+
+          showToast(`Saved "${res.filename}" (${res.stats?.lines || 0} lines)`, 'success');
+          closeExportModal();
+        } else {
+          showToast(`Export failed: ${res?.error || 'Unknown error'}`, 'error');
+        }
+      } catch (err) {
+        showToast(`Export failed: ${err.message}`, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = origHtml;
+        safeCreateIcons();
+      }
+    }
 
     // Keyboard Shortcuts
     function setupKeyboardShortcuts() {
       window.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
-          closeUndoModal();
-          closeSnapshotsDrawer();
-          closeSettingsModal();
+          if (state.sessionSearchOpen) {
+            closeSessionSearch();
+          } else if (state.promptsDrawerOpen) {
+            togglePromptsDrawer(false);
+          } else {
+            closeUndoModal();
+            closeSnapshotsDrawer();
+            closeSettingsModal();
+            closeExportModal();
+          }
+        } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+          e.preventDefault();
+          toggleSessionSearch();
+        } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'p') {
+          e.preventDefault();
+          togglePromptsDrawer();
+        } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'e') {
+          e.preventDefault();
+          openExportModal();
         } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'r') {
           e.preventDefault();
           refreshData();
@@ -1558,7 +2363,7 @@
         icon.innerHTML = `<i data-lucide="info" class="w-4 h-4 text-blue-400"></i>`;
       }
 
-      lucide.createIcons();
+      safeCreateIcons();
       toast.style.transform = 'translateY(0)';
       toast.style.opacity = '1';
 

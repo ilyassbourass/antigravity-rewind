@@ -15,6 +15,7 @@ pyinstaller --noconfirm --clean --onefile --windowed ^
     --add-data "tailwind.js;." ^
     --add-data "lucide.js;." ^
     --add-data "marked.js;." ^
+    --add-data "backend.py;." ^
     app.py
 
 if %ERRORLEVEL% equ 0 (

@@ -12,6 +12,7 @@ class RewindBackend:
             self.base_path = os.path.join(user_profile, ".gemini", "antigravity")
         else:
             self.base_path = base_path
+        self._title_cache = {}
 
     def get_kpi_stats(self):
         convs = self.discover_conversations()
@@ -41,6 +42,196 @@ class RewindBackend:
             "antigravity_path": self.base_path
         }
 
+    def clean_title_text(self, text, max_len=45):
+        if not text:
+            return ""
+        text = re.sub(r'<[^>]+>', ' ', text)
+        text = re.sub(r'^(The following is a|You are the|You are an?|Please|Can you|Could you|I want you to|I want u to)\s+', '', text, flags=re.I)
+        lines = [l.strip() for l in text.split('\n') if l.strip()]
+        if not lines:
+            return ""
+        first_line = lines[0]
+        first_line = re.sub(r'^[#*_\->`\s]+', '', first_line)
+        first_line = re.sub(r'[#*_\->`]+', '', first_line)
+        first_line = first_line.strip('"\' ')
+        if len(first_line) > max_len:
+            truncated = first_line[:max_len]
+            last_space = truncated.rfind(' ')
+            if last_space > 20:
+                first_line = truncated[:last_space] + "..."
+            else:
+                first_line = truncated + "..."
+        if first_line:
+            first_line = first_line[0].upper() + first_line[1:]
+        return first_line
+
+    def _get_summaries_map(self):
+        summaries_map = {}
+        s_db = os.path.join(self.base_path, "conversation_summaries.db")
+        if os.path.exists(s_db):
+            try:
+                conn = sqlite3.connect(s_db)
+                cur = conn.cursor()
+                cur.execute("SELECT conversation_id, title, preview, agent_name, parent_conversation_id FROM conversation_summaries;")
+                for cid, t, prev, agent, parent in cur.fetchall():
+                    summaries_map[cid] = {
+                        "title": (t or "").strip(),
+                        "preview": (prev or "").strip(),
+                        "agent_name": (agent or "").strip(),
+                        "parent_id": (parent or "").strip()
+                    }
+                conn.close()
+            except Exception:
+                pass
+        return summaries_map
+
+    def _resolve_subagent_title(self, cid, s_info):
+        parent_id = s_info.get("parent_id")
+        agent_name = s_info.get("agent_name")
+        brain_dir = os.path.join(self.base_path, "brain")
+
+        # Check subagent's own transcript
+        t_file = os.path.join(brain_dir, cid, ".system_generated", "logs", "transcript.jsonl")
+        if os.path.exists(t_file):
+            try:
+                with open(t_file, "r", encoding="utf-8", errors="ignore") as f:
+                    for _ in range(5):
+                        line = f.readline()
+                        if not line: break
+                        d = json.loads(line)
+                        cnt = d.get("content") or ""
+                        m_role = re.search(r"content=(?:You are (?:the|an?) )?([^.\n]+?)(?: for an? (?:exhaustive )?investigation on:?|:|\.)", cnt)
+                        if m_role:
+                            r_name = self.clean_title_text(m_role.group(1), 32)
+                            if r_name and len(r_name) > 3:
+                                return f"Subagent: {r_name}"
+                        m_build = re.search(r"content=(?:Build the |Reverse-engineering |Investigate )([^.\n`]+)", cnt, re.I)
+                        if m_build:
+                            b_name = self.clean_title_text(m_build.group(1), 32)
+                            if b_name:
+                                return f"Subagent: {b_name}"
+                        m_cnt = re.search(r"content=([^.\n]+?)(?:\.|\n|$)", cnt)
+                        if m_cnt:
+                            c_text = self.clean_title_text(m_cnt.group(1), 32)
+                            if c_text and len(c_text) > 4:
+                                return f"Subagent: {c_text}"
+            except Exception:
+                pass
+
+        # Check parent transcript
+        if parent_id:
+            pt_file = os.path.join(brain_dir, parent_id, ".system_generated", "logs", "transcript.jsonl")
+            if os.path.exists(pt_file):
+                try:
+                    with open(pt_file, "r", encoding="utf-8", errors="ignore") as pf:
+                        for pline in pf:
+                            if cid in pline:
+                                m_r = re.search(r'"role":\s*"([^"]+)"', pline) or re.search(r'\\"role\\":\s*\\"([^\\"]+)\\"', pline)
+                                if m_r:
+                                    return f"Subagent: {m_r.group(1)}"
+                except Exception:
+                    pass
+
+        if agent_name and agent_name not in ('self', 'MODEL_TIER_INHERIT'):
+            return f"Subagent ({agent_name})"
+        return "Subagent Task"
+
+    def resolve_conversation_title(self, cid, step_count=0, summaries_map=None, force_refresh=False):
+        if not force_refresh and cid in self._title_cache:
+            cached = self._title_cache[cid]
+            if cached and not cached.startswith("Session ("):
+                return cached
+
+        annot_dir = os.path.join(self.base_path, "annotations")
+        brain_dir = os.path.join(self.base_path, "brain")
+
+        # 1. Annotations pbtxt
+        pb_path = os.path.join(annot_dir, f"{cid}.pbtxt")
+        if os.path.exists(pb_path):
+            try:
+                with open(pb_path, "r", encoding="utf-8", errors="ignore") as f:
+                    content = f.read()
+                    m = re.search(r'title:\s*"([^"]+)"', content)
+                    if m:
+                        val = m.group(1).strip()
+                        if val and val != cid and not val.startswith(cid[:8]):
+                            self._title_cache[cid] = val
+                            return val
+            except Exception:
+                pass
+
+        # 2. conversation_summaries.db
+        if summaries_map is None:
+            summaries_map = self._get_summaries_map()
+
+        s_info = summaries_map.get(cid)
+        if s_info:
+            s_title = s_info.get("title", "")
+            if s_title and s_title != cid and not s_title.startswith(cid[:8]):
+                self._title_cache[cid] = s_title
+                return s_title
+
+            # Subagent detection via parent_conversation_id
+            if s_info.get("parent_id"):
+                sub_title = self._resolve_subagent_title(cid, s_info)
+                if sub_title:
+                    self._title_cache[cid] = sub_title
+                    return sub_title
+
+            # Summaries preview
+            preview = s_info.get("preview", "")
+            if preview and preview != cid and not preview.startswith(cid[:8]):
+                cleaned = self.clean_title_text(preview)
+                if cleaned:
+                    self._title_cache[cid] = cleaned
+                    return cleaned
+
+        # 3. Transcript inspection (User requests or Subagent system messages)
+        brain_path = os.path.join(brain_dir, cid)
+        logs_path = os.path.join(brain_path, ".system_generated", "logs")
+        for tf_name in ("transcript.jsonl", "transcript_full.jsonl"):
+            t_path = os.path.join(logs_path, tf_name)
+            if os.path.exists(t_path):
+                try:
+                    with open(t_path, "r", encoding="utf-8", errors="ignore") as f:
+                        for _ in range(25):
+                            line = f.readline()
+                            if not line:
+                                break
+                            d = json.loads(line)
+                            cnt = d.get("content") or ""
+                            tp = d.get("type") or ""
+                            src = d.get("source") or ""
+
+                            # User prompt
+                            if tp == "USER_INPUT" or src == "USER_EXPLICIT" or "<USER_REQUEST>" in cnt:
+                                req_m = re.search(r'<USER_REQUEST>\s*(.*?)(?:</USER_REQUEST>|$)', cnt, re.DOTALL)
+                                prompt_text = req_m.group(1) if req_m else cnt
+                                cleaned = self.clean_title_text(prompt_text)
+                                if cleaned:
+                                    self._title_cache[cid] = cleaned
+                                    return cleaned
+
+                            # Subagent content
+                            if "content=" in cnt and ("You are" in cnt or "sender=" in cnt):
+                                m_sub = re.search(r'content=(?:You are the |Build the |Reverse-engineering )?([^.\n]+)', cnt)
+                                if m_sub:
+                                    c_name = self.clean_title_text(m_sub.group(1), 35)
+                                    if c_name:
+                                        res = f"Subagent: {c_name}"
+                                        self._title_cache[cid] = res
+                                        return res
+                except Exception:
+                    pass
+                break
+
+        if step_count == 0:
+            return "New Blank Session"
+
+        fallback = f"Session ({cid[:8]})"
+        self._title_cache[cid] = fallback
+        return fallback
+
     def discover_conversations(self):
         convs = []
         conv_dir = os.path.join(self.base_path, "conversations")
@@ -50,20 +241,12 @@ class RewindBackend:
         if not os.path.exists(conv_dir):
             return convs
 
+        summaries_map = self._get_summaries_map()
+
         for f in os.listdir(conv_dir):
             if f.endswith(".db"):
                 cid = f[:-3]
                 db_path = os.path.join(conv_dir, f)
-                title = cid
-                pb_path = os.path.join(annot_dir, f"{cid}.pbtxt")
-                if os.path.exists(pb_path):
-                    try:
-                        content = open(pb_path, "r", encoding="utf-8").read()
-                        m = re.search(r'title:\s*"([^"]+)"', content)
-                        if m:
-                            title = m.group(1)
-                    except:
-                        pass
 
                 step_count = 0
                 try:
@@ -79,6 +262,8 @@ class RewindBackend:
                     conn.close()
                 except:
                     pass
+
+                title = self.resolve_conversation_title(cid, step_count, summaries_map)
 
                 mtime = os.path.getmtime(db_path)
                 dt = datetime.fromtimestamp(mtime)
@@ -130,7 +315,7 @@ class RewindBackend:
         else:
             return f"{diff // (86400 * 365)}y"
 
-    def get_chat_feed(self, conv_id, limit=250):
+    def get_chat_feed(self, conv_id, limit=0):
         brain_path = os.path.join(self.base_path, "brain", conv_id)
         logs_path = os.path.join(brain_path, ".system_generated", "logs")
         tf_path = os.path.join(logs_path, "transcript_full.jsonl")
@@ -345,6 +530,41 @@ class RewindBackend:
                 'message': f'Showing latest {len(feed)} steps. Click to load all {total_steps} steps.'
             })
         return feed
+
+    def get_conversation_prompts(self, conv_id):
+        brain_path = os.path.join(self.base_path, "brain", conv_id)
+        logs_path = os.path.join(brain_path, ".system_generated", "logs")
+        t_path = os.path.join(logs_path, "transcript.jsonl")
+        tf_path = os.path.join(logs_path, "transcript_full.jsonl")
+        target_path = t_path if os.path.exists(t_path) else tf_path
+
+        prompts = []
+        if not os.path.exists(target_path):
+            return prompts
+
+        try:
+            with open(target_path, "r", encoding="utf-8", errors="ignore") as f:
+                for line_idx, line in enumerate(f):
+                    if '"USER_INPUT"' in line or '"USER_EXPLICIT"' in line:
+                        try:
+                            obj = json.loads(line.strip())
+                            tp = obj.get("type")
+                            src = obj.get("source")
+                            if src == "USER_EXPLICIT" or tp == "USER_INPUT":
+                                cnt = obj.get("content", "")
+                                m = re.search(r'<USER_REQUEST>\s*(.*?)\s*</USER_REQUEST>', cnt, re.DOTALL)
+                                req_text = m.group(1).strip() if m else cnt
+                                prompts.append({
+                                    "step_index": obj.get("step_index", line_idx),
+                                    "text": req_text,
+                                    "timestamp": obj.get("created_at", "")
+                                })
+                        except Exception:
+                            continue
+        except Exception as e:
+            print(f"[get_conversation_prompts] Error: {e}")
+
+        return prompts
 
     def get_steps(self, conv_id):
         brain_path = os.path.join(self.base_path, "brain", conv_id)
@@ -761,16 +981,7 @@ class RewindBackend:
         annot_dir = os.path.join(self.base_path, "annotations")
 
         # Resolve thread title
-        thread_title = conv_id
-        pb_path = os.path.join(annot_dir, f"{conv_id}.pbtxt")
-        if os.path.exists(pb_path):
-            try:
-                content = open(pb_path, "r", encoding="utf-8").read()
-                m = re.search(r'title:\s*"([^"]+)"', content)
-                if m:
-                    thread_title = m.group(1)
-            except:
-                pass
+        thread_title = self.resolve_conversation_title(conv_id)
 
         # Live DB state to check is_active
         live_db = os.path.join(conv_dir, f"{conv_id}.db")
@@ -1060,6 +1271,303 @@ class RewindBackend:
             d /= 1024
             i += 1
         return f"{d:.1f} {suffixes[i]}"
+    
+    def open_antigravity_folder(self):
+        try:
+            if sys.platform == "win32":
+                os.startfile(self.base_path)
+            elif sys.platform == "darwin":
+                subprocess.Popen(["open", self.base_path])
+            else:
+                subprocess.Popen(["xdg-open", self.base_path])
+            return {"success": True, "path": self.base_path}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def restart_antigravity(self):
+        try:
+            candidates = [
+                os.path.expandvars(r"%LOCALAPPDATA%\Programs\antigravity\Antigravity.exe"),
+                r"C:\Users\PC\AppData\Local\Programs\antigravity\Antigravity.exe",
+                os.path.expandvars(r"%PROGRAMFILES%\Antigravity\Antigravity.exe")
+            ]
+            exe_path = next((p for p in candidates if os.path.exists(p)), None)
+
+            # Terminate running Antigravity processes
+            if sys.platform == "win32":
+                subprocess.run(["taskkill", "/F", "/IM", "Antigravity.exe"], capture_output=True)
+            else:
+                subprocess.run(["pkill", "-f", "Antigravity"], capture_output=True)
+
+            import time
+            time.sleep(1.2)
+
+            if exe_path and os.path.exists(exe_path):
+                if sys.platform == "win32":
+                    os.startfile(exe_path)
+                else:
+                    subprocess.Popen([exe_path], start_new_session=True)
+                return {"success": True, "restarted": True, "path": exe_path}
+            else:
+                return {"success": True, "restarted": False, "message": "Antigravity terminated. Please launch it from desktop."}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def export_conversation_markdown(self, conv_id, include_thinking=True, include_tools=True):
+        """
+        Exports an Antigravity conversation session as clean, formatted Markdown.
+        Supports granular filters:
+          - include_thinking (bool): Whether to include model thinking blocks
+          - include_tools (bool): Whether to include tool calls, parameters & execution outputs
+        """
+        try:
+            brain_path = os.path.join(self.base_path, "brain", conv_id)
+            logs_path = os.path.join(brain_path, ".system_generated", "logs")
+            tf_path = os.path.join(logs_path, "transcript_full.jsonl")
+            t_path = os.path.join(logs_path, "transcript.jsonl")
+            target_path = tf_path if os.path.exists(tf_path) else t_path
+
+            if not os.path.exists(target_path):
+                return {
+                    "success": False,
+                    "error": f"Transcript not found for conversation {conv_id}"
+                }
+
+            # Retrieve conversation title
+            title = self.resolve_conversation_title(conv_id)
+
+            # Safe filename slug
+            clean_title = re.sub(r'[^\w\s-]', '', title).strip().replace(' ', '_')
+            if not clean_title:
+                clean_title = "session"
+            filename = f"{clean_title}_{conv_id[:8]}.md"
+
+            md = []
+            md.append(f"# {title}\n")
+            md.append(f"**Session ID:** `{conv_id}`  ")
+            md.append(f"**Exported:** `{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}`  ")
+            md.append(f"**Include Thinking:** `{'Yes' if include_thinking else 'No'}`  ")
+            md.append(f"**Include Tools & Calling:** `{'Yes' if include_tools else 'No'}`  ")
+            md.append("\n---\n")
+
+            assistant_buffer = {
+                "thinking": [],
+                "tools": [],
+                "content": []
+            }
+            pending_tools = []
+            user_turns_count = 0
+            asst_turns_count = 0
+            thinking_blocks_count = 0
+            tool_calls_count = 0
+
+            def flush_assistant_turn():
+                nonlocal assistant_buffer, asst_turns_count, thinking_blocks_count, tool_calls_count
+                has_thinking = bool(assistant_buffer["thinking"]) and include_thinking
+                has_tools = bool(assistant_buffer["tools"]) and include_tools
+                has_content = bool(assistant_buffer["content"])
+
+                if not (has_thinking or has_tools or has_content):
+                    assistant_buffer = {"thinking": [], "tools": [], "content": []}
+                    return
+
+                asst_turns_count += 1
+                md.append("## Assistant\n")
+
+                if has_thinking:
+                    for think_text in assistant_buffer["thinking"]:
+                        thinking_blocks_count += 1
+                        md.append(f"_Thinking:_\n\n{think_text}\n")
+
+                if has_tools:
+                    for tool in assistant_buffer["tools"]:
+                        tool_calls_count += 1
+                        tname = tool.get("name") or "tool"
+                        args = tool.get("args") or {}
+                        output = tool.get("output", "")
+
+                        md.append(f"**Tool: `{tname}`**\n")
+                        if args:
+                            try:
+                                args_str = json.dumps(args, indent=2, ensure_ascii=False)
+                            except Exception:
+                                args_str = str(args)
+                            md.append(f"**Input:**\n```json\n{args_str}\n```\n")
+
+                        if output:
+                            md.append(f"**Output:**\n```\n{output}\n```\n")
+
+                if has_content:
+                    for c in assistant_buffer["content"]:
+                        md.append(f"{c}\n")
+
+                md.append("---\n")
+                assistant_buffer = {"thinking": [], "tools": [], "content": []}
+
+            with open(target_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        obj = json.loads(line)
+                    except Exception:
+                        continue
+
+                    source = obj.get("source")
+                    m_type = obj.get("type")
+                    content = obj.get("content", "")
+                    thinking = obj.get("thinking", "")
+                    tool_calls = obj.get("tool_calls", [])
+
+                    if source == "USER_EXPLICIT" or m_type == "USER_INPUT":
+                        flush_assistant_turn()
+                        user_turns_count += 1
+                        req_text = content
+                        m = re.search(r"<USER_REQUEST>\s*(.*?)\s*</USER_REQUEST>", content, re.DOTALL)
+                        if m:
+                            req_text = m.group(1).strip()
+                        md.append(f"## User\n\n{req_text}\n\n---\n")
+
+                    elif m_type == "PLANNER_RESPONSE":
+                        if thinking and thinking.strip():
+                            assistant_buffer["thinking"].append(thinking.strip())
+
+                        if tool_calls:
+                            for tc in tool_calls:
+                                t_item = {
+                                    "name": tc.get("name"),
+                                    "args": tc.get("args", {})
+                                }
+                                pending_tools.append(t_item)
+                                assistant_buffer["tools"].append(t_item)
+
+                        if content and content.strip():
+                            assistant_buffer["content"].append(content.strip())
+
+                    elif m_type == "GENERIC":
+                        if pending_tools:
+                            last_tool = pending_tools.pop(0)
+                            last_tool["output"] = content.strip()
+
+            flush_assistant_turn()
+            final_markdown = "\n".join(md)
+
+            return {
+                "success": True,
+                "conv_id": conv_id,
+                "title": title,
+                "filename": filename,
+                "markdown": final_markdown,
+                "stats": {
+                    "user_turns": user_turns_count,
+                    "assistant_turns": asst_turns_count,
+                    "thinking_blocks": thinking_blocks_count,
+                    "tool_calls": tool_calls_count,
+                    "characters": len(final_markdown),
+                    "lines": len(final_markdown.splitlines())
+                }
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def search_session(self, conv_id, query, case_sensitive=False, limit=200):
+        if not query or not query.strip():
+            return {
+                "success": True,
+                "query": "",
+                "total_matches": 0,
+                "turns_count": 0,
+                "matches": []
+            }
+
+        brain_path = os.path.join(self.base_path, "brain", conv_id)
+        logs_path = os.path.join(brain_path, ".system_generated", "logs")
+        tf_path = os.path.join(logs_path, "transcript_full.jsonl")
+        t_path = os.path.join(logs_path, "transcript.jsonl")
+        target_path = tf_path if os.path.exists(tf_path) else t_path
+
+        if not os.path.exists(target_path):
+            return {
+                "success": False,
+                "error": f"Transcript not found for conversation {conv_id}",
+                "matches": []
+            }
+
+        flags = 0 if case_sensitive else re.IGNORECASE
+        escaped = re.escape(query.strip())
+        pattern = re.compile(f"({escaped})", flags)
+
+        matches = []
+        total_matches = 0
+
+        try:
+            with open(target_path, "r", encoding="utf-8", errors="ignore") as f:
+                for line_idx, line in enumerate(f):
+                    if not line.strip():
+                        continue
+                    try:
+                        step = json.loads(line)
+                    except Exception:
+                        continue
+
+                    step_idx = step.get("step_index", line_idx)
+                    tp = step.get("type", "")
+                    src = step.get("source", "")
+                    role = "assistant"
+                    if tp == "USER_INPUT" or src == "USER_EXPLICIT":
+                        role = "user"
+                    elif tp in ["GENERIC", "TOOL"]:
+                        role = "tool"
+
+                    cnt = step.get("content") or ""
+                    thinking = step.get("thinking") or ""
+                    tool_calls = step.get("tool_calls") or []
+
+                    tc_text = ""
+                    if tool_calls:
+                        tc_text = " ".join([f"{t.get('name', '')} {json.dumps(t.get('args', {}))}" for t in tool_calls])
+
+                    combined_text = f"{cnt} {thinking} {tc_text}"
+                    found = list(pattern.finditer(combined_text))
+                    if found:
+                        count = len(found)
+                        total_matches += count
+                        m0 = found[0]
+                        start = max(0, m0.start() - 40)
+                        end = min(len(combined_text), m0.end() + 60)
+                        snippet = combined_text[start:end].replace("\n", " ").strip()
+                        if start > 0:
+                            snippet = "..." + snippet
+                        if end < len(combined_text):
+                            snippet = snippet + "..."
+
+                        if len(matches) < limit:
+                            matches.append({
+                                "step_index": step_idx,
+                                "role": role,
+                                "type": tp,
+                                "match_count": count,
+                                "snippet": snippet
+                            })
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "total_matches": total_matches,
+                "matches": matches
+            }
+
+        return {
+            "success": True,
+            "conv_id": conv_id,
+            "query": query,
+            "total_matches": total_matches,
+            "turns_count": len(matches),
+            "matches": matches
+        }
+
+
     
     def open_antigravity_folder(self):
         try:

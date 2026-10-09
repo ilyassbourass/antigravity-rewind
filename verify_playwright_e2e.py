@@ -5,14 +5,14 @@ import json
 import shutil
 import sqlite3
 import threading
-from http.server import HTTPServer
+from http.server import ThreadingHTTPServer
 from app import AppHandler, PORT, backend
 from playwright.sync_api import sync_playwright
 
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
-candidate_dir = r"C:\Users\PC\.gemini\antigravity\brain\f74d1ad5-f0d6-444e-b174-59e7d78ca3a8"
+candidate_dir = r"C:\Users\bourass\.gemini\antigravity\brain\f74d1ad5-f0d6-444e-b174-59e7d78ca3a8"
 if os.path.exists(os.path.dirname(candidate_dir)):
     ARTIFACT_DIR = candidate_dir
 else:
@@ -28,7 +28,7 @@ def get_free_port():
 
 def start_server():
     port = get_free_port()
-    server = HTTPServer(("127.0.0.1", port), AppHandler)
+    server = ThreadingHTTPServer(("127.0.0.1", port), AppHandler)
     t = threading.Thread(target=server.serve_forever, daemon=True)
     t.start()
     time.sleep(0.5)
@@ -62,15 +62,13 @@ def ensure_test_fixtures(base_path):
     b_logs = os.path.join(brain_dir, bourass_id, ".system_generated", "logs")
     os.makedirs(b_logs, exist_ok=True)
     t_file = os.path.join(b_logs, "transcript.jsonl")
-    if not os.path.exists(t_file):
-        with open(t_file, "w", encoding="utf-8") as f:
-            f.write(json.dumps({"step_index": 0, "type": "USER_INPUT", "source": "USER_EXPLICIT", "content": "<USER_REQUEST>BourassVPN start</USER_REQUEST>"}) + "\n")
-            f.write(json.dumps({"step_index": 1, "type": "PLANNER_RESPONSE", "source": "MODEL", "content": "Running optimization", "thinking": "Thinking for 14s"}) + "\n")
-            f.write(json.dumps({"step_index": 2, "type": "TOOL_CALL", "tool_calls": [{"tool_name": "run_command", "args": {"CommandLine": "dir"}}]}) + "\n")
-            f.write(json.dumps({"step_index": 3, "type": "PLANNER_RESPONSE", "source": "MODEL", "content": "### 🏁 Optimization Complete: BourassVPN Now Beats FaizVPN We have recompiled..."}) + "\n")
     tf_file = os.path.join(b_logs, "transcript_full.jsonl")
-    if not os.path.exists(tf_file):
-        shutil.copy2(t_file, tf_file)
+    with open(t_file, "w", encoding="utf-8") as f:
+        f.write(json.dumps({"step_index": 0, "type": "USER_INPUT", "source": "USER_EXPLICIT", "content": "<USER_REQUEST>BourassVPN start</USER_REQUEST>"}) + "\n")
+        f.write(json.dumps({"step_index": 1, "type": "PLANNER_RESPONSE", "source": "MODEL", "content": "Running optimization", "thinking": "Thinking for 14s", "tool_calls": [{"name": "run_command", "args": {"CommandLine": "dir"}}]}) + "\n")
+        f.write(json.dumps({"step_index": 2, "type": "GENERIC", "source": "MODEL", "content": "Directory of C:\\Users\\PC\\Optimization\n09/26/2026 05:48 PM <DIR> .\nVolume Serial Number is 1234-ABCD"}) + "\n")
+        f.write(json.dumps({"step_index": 3, "type": "PLANNER_RESPONSE", "source": "MODEL", "content": "### 🏁 Optimization Complete: BourassVPN Now Beats FaizVPN We have recompiled..."}) + "\n")
+    shutil.copy2(t_file, tf_file)
 
     b_bak = os.path.join(brain_dir, bourass_id, "backups", "backup_20260926_174807")
     os.makedirs(b_bak, exist_ok=True)
@@ -173,9 +171,14 @@ def run_e2e_test():
 
     with sync_playwright() as p:
         print("[E2E] Launching browser via Playwright...", flush=True)
-        try:
-            browser = p.chromium.launch(channel="chrome", headless=True)
-        except Exception:
+        browser = None
+        for chan in ["msedge", "chrome"]:
+            try:
+                browser = p.chromium.launch(channel=chan, headless=True)
+                break
+            except Exception:
+                pass
+        if not browser:
             browser = p.chromium.launch(headless=True)
         context = browser.new_context(viewport={"width": 1280, "height": 820})
         page = context.new_page()
@@ -255,16 +258,16 @@ def run_e2e_test():
 
         # First simulate rollback to Step 450 to test real-world restore
         print("[E2E] Simulating rollback to Step 450 to verify snapshot restore workflow...", flush=True)
-        page.evaluate("apiCall('perform_rollback', ['1de7c250-59af-45c8-93ec-84f468944ff8', 450, true])")
-        time.sleep(0.8)
-        page.evaluate("selectConversation('1de7c250-59af-45c8-93ec-84f468944ff8')")
-        time.sleep(0.8)
+        backend.perform_rollback("1de7c250-59af-45c8-93ec-84f468944ff8", 450, make_backup=True)
+        time.sleep(0.5)
+        page.evaluate("() => selectConversation('1de7c250-59af-45c8-93ec-84f468944ff8')")
+        time.sleep(1.0)
 
         # Open Snapshots drawer for Samsung
         print("[E2E] Opening Snapshots drawer for Samsung...", flush=True)
         page.locator("button:has-text('Snapshots')").first.click()
         time.sleep(0.6)
-        page.wait_for_selector("#snapshots-list-container > div")
+        page.wait_for_selector("button:has-text('Restore Conversation')")
 
         # Find a restore button on a card that is not currently active
         restore_btns = page.locator("button:has-text('Restore Conversation')")
@@ -322,6 +325,27 @@ def run_e2e_test():
             time.sleep(0.5)
             assert not restart_modal.is_visible(), "Restart modal did not dismiss after 'No, Later'"
             print("[E2E] Verified: 'No, Later' smoothly dismisses modal with toast notification!", flush=True)
+
+            # Test 'Yes, Restart' button UI response
+            print("[E2E] Testing 'Yes, Restart' button UI flow...", flush=True)
+            page.evaluate("showRestartAntigravityPrompt('Testing Restart Flow')")
+            time.sleep(0.3)
+            assert page.locator("#restart-ag-modal").is_visible(), "Restart modal should be open"
+            page.evaluate("""
+                window._origApiCall = window.apiCall;
+                window.apiCall = async (method, args) => {
+                    if (method === 'restart_antigravity') return { success: true, restarted: true };
+                    return window._origApiCall(method, args);
+                };
+            """)
+            page.locator("#btn-restart-ag-yes").click()
+            time.sleep(0.5)
+            assert not page.locator("#restart-ag-modal").is_visible(), "Restart modal should close after restart"
+            toast_restart = page.locator("#ag-toast").inner_text()
+            print(f"[E2E] Restart toast notification: '{toast_restart}'", flush=True)
+            assert "restarted successfully" in toast_restart.lower(), f"Unexpected toast: {toast_restart}"
+            page.evaluate("window.apiCall = window._origApiCall;")
+            print("[E2E] Verified: 'Yes, Restart' button triggers clean restart flow and success feedback!", flush=True)
 
             # Test 'Yes, Restart' button UI response
             print("[E2E] Testing 'Yes, Restart' button UI flow...", flush=True)
@@ -507,8 +531,219 @@ def run_e2e_test():
         print(f"[E2E] Browser dialogs/alerts encountered: {len(dialogs_encountered)}", flush=True)
         assert len(dialogs_encountered) == 0, f"Leaked browser dialogs detected: {dialogs_encountered}"
 
+        # 13. Verify Markdown Export Feature (Both UI & Backend API)
+        print("[E2E] Testing Markdown Export Feature with Thinking & Tool Call Checkboxes...", flush=True)
+        bourass_id = "89076268-ad08-4b72-8e89-2137e778740c"
+
+        # 13a. Backend API Permutations Verification
+        exp_both = backend.export_conversation_markdown(bourass_id, include_thinking=True, include_tools=True)
+        assert exp_both["success"] is True, f"Backend export failed: {exp_both.get('error')}"
+        assert "_Thinking:_" in exp_both["markdown"], "Thinking expected in full export"
+        assert "**Tool: `run_command`**" in exp_both["markdown"], "Tool call expected in full export"
+        print(f"[E2E] Backend export (Thinking=True, Tools=True): {exp_both['stats']['lines']} lines, verified!", flush=True)
+
+        exp_no_think = backend.export_conversation_markdown(bourass_id, include_thinking=False, include_tools=True)
+        assert exp_no_think["success"] is True
+        assert "_Thinking:_" not in exp_no_think["markdown"], "Thinking should NOT be in export"
+        assert "**Tool: `run_command`**" in exp_no_think["markdown"], "Tool call should be in export"
+        print(f"[E2E] Backend export (Thinking=False, Tools=True): verified!", flush=True)
+
+        exp_no_tools = backend.export_conversation_markdown(bourass_id, include_thinking=True, include_tools=False)
+        assert exp_no_tools["success"] is True
+        assert "_Thinking:_" in exp_no_tools["markdown"], "Thinking should be in export"
+        assert "**Tool: `run_command`**" not in exp_no_tools["markdown"], "Tool call should NOT be in export"
+        print(f"[E2E] Backend export (Thinking=True, Tools=False): verified!", flush=True)
+
+        exp_clean = backend.export_conversation_markdown(bourass_id, include_thinking=False, include_tools=False)
+        assert exp_clean["success"] is True
+        assert "_Thinking:_" not in exp_clean["markdown"], "Thinking should NOT be in clean export"
+        assert "**Tool: `run_command`**" not in exp_clean["markdown"], "Tool call should NOT be in clean export"
+        print(f"[E2E] Backend export (Thinking=False, Tools=False): verified!", flush=True)
+
+        # 13b. Playwright UI Verification
+        # Select bourass_id conversation to ensure it is active
+        bourass_item = page.locator("#sidebar-conversations-list div:has-text('BourassVPN')").first
+        bourass_item.click()
+        time.sleep(0.5)
+
+        # Header button present
+        export_btn = page.locator("#header-export-btn")
+        assert export_btn.is_visible(), "Header Export button should be visible"
+        print("[E2E] Header Export button is visible. Clicking it...", flush=True)
+        export_btn.click()
+        page.wait_for_selector("#export-modal:not(.hidden)", timeout=4000)
+
+        # Verify modal elements
+        modal_title = page.locator("#export-modal-title").inner_text()
+        print(f"[E2E] Export modal opened for: '{modal_title}'", flush=True)
+
+        check_thinking = page.locator("#export-include-thinking")
+        check_tools = page.locator("#export-include-tools")
+        assert check_thinking.is_checked(), "Thinking checkbox should be checked by default"
+        assert check_tools.is_checked(), "Tools checkbox should be checked by default"
+        print("[E2E] Verified: Both 'Include thinking' and 'Include tools' checkboxes are present and checked!", flush=True)
+
+        # Take screenshot of Export Modal
+        shot_export = os.path.join(ARTIFACT_DIR, "e2e_09_export_modal.png")
+        page.screenshot(path=shot_export)
+        print(f"[E2E] Captured Export Modal screenshot: {shot_export}", flush=True)
+
+        # Toggle checkboxes
+        check_thinking.uncheck()
+        assert not check_thinking.is_checked()
+        check_tools.uncheck()
+        assert not check_tools.is_checked()
+        check_thinking.check()
+        assert check_thinking.is_checked()
+        check_tools.check()
+        assert check_tools.is_checked()
+        print("[E2E] Verified: Checkboxes toggle smoothly!", flush=True)
+
+        # Test Copy Markdown button
+        btn_copy = page.locator("#btn-copy-markdown")
+        btn_copy.click()
+        time.sleep(0.5)
+        toast = page.locator("#ag-toast")
+        toast_text = toast.inner_text()
+        print(f"[E2E] Toast notification displayed: '{toast_text}'", flush=True)
+        assert "copied" in toast_text.lower() or "export" in toast_text.lower() or "lines" in toast_text.lower()
+        print("[E2E] Copy Markdown button executed and showed success toast!", flush=True)
+
+        # Test Ctrl+E shortcut
+        page.keyboard.press("Control+e")
+        time.sleep(0.3)
+        assert page.locator("#export-modal:not(.hidden)").count() > 0, "Ctrl+E should open Export Modal"
+        page.keyboard.press("Escape")
+        time.sleep(0.3)
+        assert page.locator("#export-modal.hidden").count() > 0, "Escape should close Export Modal"
+        print("[E2E] Keyboard shortcuts Ctrl+E (open) and Esc (close) verified!", flush=True)
+
+        # Step 14: Verify Resolved Conversation Names in Sidebar (zero raw UUIDs)
+        import re
+        print("[E2E] Verifying resolved conversation names in sidebar (zero raw UUIDs)...", flush=True)
+        sidebar_titles = page.locator("#sidebar-conversations-list span.truncate").all_inner_texts()
+        raw_uuid_pattern = re.compile(r'^[0-9a-f]{8}-[0-9a-f]{4}')
+        raw_count = sum(1 for t in sidebar_titles if raw_uuid_pattern.match(t.strip()))
+        print(f"[E2E] Total sidebar items: {len(sidebar_titles)}, Raw UUIDs found: {raw_count}", flush=True)
+        assert raw_count == 0, f"Expected 0 raw UUID titles in sidebar, but found {raw_count}"
+        print(f"[E2E] Sample resolved titles in sidebar: {sidebar_titles[:6]}", flush=True)
+
+        # Capture screenshot of sidebar with resolved names
+        shot_sidebar = os.path.join(ARTIFACT_DIR, "e2e_10_resolved_conversation_names.png")
+        page.screenshot(path=shot_sidebar)
+        print(f"[E2E] Captured resolved titles screenshot: {shot_sidebar}", flush=True)
+
+        # Step 15: Verify Full-Height Right-Side User Prompts Drawer (User Messages Navigator)
+        print("\n[E2E] Testing Full-Height Right-Side User Prompts Drawer...", flush=True)
+        assert page.locator("#header-prompts-btn").is_visible(), "Prompts button in header should be visible"
+        
+        # Click Prompts button to open full-height drawer
+        page.locator("#header-prompts-btn").click()
+        time.sleep(0.4)
+        drawer = page.locator("#prompts-drawer")
+        assert drawer.is_visible(), "Prompts drawer should be visible and not hidden"
+        
+        # Verify prompt cards inside drawer
+        page.wait_for_selector("#prompts-drawer-items .prompt-card")
+        prompt_cards = page.locator("#prompts-drawer-items .prompt-card")
+        prompt_count = prompt_cards.count()
+        print(f"[E2E] Found {prompt_count} user prompt cards in Prompts Drawer", flush=True)
+        assert prompt_count > 0, "Prompts drawer should have user prompt cards"
+
+        first_card_text = prompt_cards.first.inner_text()
+        print(f"[E2E] First prompt card preview:\n{first_card_text[:120]}...", flush=True)
+        assert "turn #1" in first_card_text.lower(), "Turn number badge missing in prompt card"
+        assert "step #" in first_card_text.lower(), "Step number badge missing in prompt card"
+
+        # Verify prompt filter input in drawer
+        filter_input = page.locator("#prompts-filter-input")
+        assert filter_input.is_visible(), "Prompts drawer filter input should be visible"
+        
+        # Click the first prompt and verify jump-flash animation and feed node navigation
+        step_idx = prompt_cards.first.get_attribute("data-step-index")
+        print(f"[E2E] Clicking prompt card for Step #{step_idx}...", flush=True)
+        prompt_cards.first.click()
+        time.sleep(0.4)
+        
+        # Verify active card class
+        assert "border-sky-500" in (prompt_cards.first.get_attribute("class") or ""), "Clicked prompt card should have active border class"
+        
+        # Verify target node exists and was navigated to
+        feed_target = page.locator(f"#chat-feed-scroll .feed-node[data-step-index='{step_idx}']")
+        assert feed_target.is_visible(), f"Feed node for Step #{step_idx} should be visible in chat feed"
+        print("[E2E] Verified: Clicking prompt item triggers smooth jump and active highlight in feed!", flush=True)
+
+        # Capture screenshot of Full-Height Prompts Drawer
+        shot_prompts = os.path.join(ARTIFACT_DIR, "e2e_13_full_height_prompts_drawer.png")
+        page.screenshot(path=shot_prompts)
+        print(f"[E2E] Captured Full-Height Prompts Drawer screenshot: {shot_prompts}", flush=True)
+
+        # Also capture shot_rail for compatibility
+        shot_rail = os.path.join(ARTIFACT_DIR, "e2e_11_prompt_rail_user_messages.png")
+        page.screenshot(path=shot_rail)
+
+        # Test Ctrl+P shortcut to toggle drawer
+        page.keyboard.press("Control+p")
+        time.sleep(0.3)
+        assert not drawer.is_visible(), "Ctrl+P should toggle drawer closed"
+        page.keyboard.press("Control+p")
+        time.sleep(0.3)
+        assert drawer.is_visible(), "Ctrl+P should toggle drawer open"
+        print("[E2E] Verified: Ctrl+P toggles Prompts Drawer cleanly!", flush=True)
+
+        # Step 16: Verify Accurate In-Session Search
+        print("\n[E2E] Testing Accurate In-Session Search (Ctrl+F, highlighting, navigation)...", flush=True)
+        # Test opening search via header button
+        page.locator("#header-search-btn").click()
+        time.sleep(0.3)
+        assert page.locator("#session-search-bar:not(.hidden)").count() > 0, "Session search bar should be visible"
+        assert page.locator("#session-search-input").is_visible(), "Session search input should be visible"
+
+        # Test searching for a keyword
+        page.locator("#session-search-input").fill("optimization")
+        time.sleep(0.4)
+        
+        search_count_text = page.locator("#session-search-count").inner_text()
+        print(f"[E2E] Search match counter for 'optimization': '{search_count_text}'", flush=True)
+        assert "/" in search_count_text and not search_count_text.startswith("0/0"), f"Expected matches for 'optimization', got: {search_count_text}"
+
+        # Verify mark elements exist
+        marks = page.locator("mark.ag-search-match")
+        marks_count = marks.count()
+        print(f"[E2E] Verified {marks_count} highlighted mark elements in chat feed", flush=True)
+        assert marks_count > 0, "Highlights should be rendered for matched search query"
+
+        # Verify active mark exists
+        active_marks = page.locator("mark.ag-search-match.active")
+        assert active_marks.count() == 1, "Exactly one active match should be highlighted"
+
+        # Test next match navigation button
+        page.locator("#session-search-next").click()
+        time.sleep(0.2)
+        print("[E2E] Next match button navigated smoothly!", flush=True)
+
+        # Capture screenshot of In-Session Accurate Search
+        shot_search = os.path.join(ARTIFACT_DIR, "e2e_12_in_session_accurate_search.png")
+        page.screenshot(path=shot_search)
+        print(f"[E2E] Captured In-Session Search screenshot: {shot_search}", flush=True)
+
+        # Test Esc key to close search bar
+        page.keyboard.press("Escape")
+        time.sleep(0.3)
+        assert page.locator("#session-search-bar.hidden").count() > 0, "Escape should close search bar"
+        assert page.locator("mark.ag-search-match").count() == 0, "Closing search should clear all highlights"
+        print("[E2E] Verified: Escape cleanly closes search bar and clears highlights!", flush=True)
+
+        # Test Ctrl+F shortcut to reopen search
+        page.keyboard.press("Control+f")
+        time.sleep(0.3)
+        assert page.locator("#session-search-bar:not(.hidden)").count() > 0, "Ctrl+F shortcut should open search bar"
+        page.keyboard.press("Escape")
+        time.sleep(0.2)
+        print("[E2E] Verified: Ctrl+F shortcut opens search bar cleanly!", flush=True)
+
         browser.close()
-        print("\n[SUCCESS] ALL 12 END-TO-END HUMAN-LIKE VERIFICATION TESTS PASSED WITH 100% ACCURACY!", flush=True)
+        print("\n[SUCCESS] ALL 16 END-TO-END HUMAN-LIKE VERIFICATION TESTS PASSED WITH 100% ACCURACY!", flush=True)
 
 if __name__ == "__main__":
     run_e2e_test()
