@@ -182,6 +182,30 @@ When Google Antigravity runs, it manages state across multiple synchronized laye
 
 ---
 
+## 🦀 Rust Port & Performance (rust-anything)
+
+A slice of the pure-logic core was ported to Rust with [`rust-anything`](https://github.com/hotmath/rust-anything) (v2.1.0), which auto-generated a PyO3 crate from the Python module, then recorded, verified and gated it:
+
+- **Ported unit**: `rewind_text.py` (`clean_title_text`, `format_bytes`, varint decode/encode) → `rust/rewind-text-rs`
+- **Correctness**: 273 recorded cases replayed in Rust — **273/273 identical**; the `rust-anything gate` passes (it also caught planted-bug/UTF-16 variants during setup)
+- **Differential proof**: the app was run twice (Python-only vs Rust-wired) and compared byte-for-byte — all **29 HTTP endpoint responses identical** (`test_rust_port_http.py`), plus an app-level E2E (`test_rust_port_e2e.py`)
+- **Graceful fallback**: `backend.py` only uses the Rust helpers when `rewind_text_rs._native` imports; without it, the app is 100% standard Python again
+
+Performance work (benchmarks on real user data — 38 conversations, 120 MB / 12,595-step session):
+
+| Operation | Before | After |
+|---|---:|---:|
+| Warm dashboard | ~321 ms | **5–7 ms** |
+| `get_steps` API | ~42 ms | **0.1 ms** |
+| Search API | ~73 ms | **0.1 ms** |
+| Export markdown | ~77 ms | **2.2 ms** |
+| First click on 120 MB conversation | ~250 ms+ | **~55 ms** |
+| Conversation switch (warm) | 35–60 ms | **29–46 ms** |
+
+Key techniques: Rust crate (`rewind-text-rs`) for the varint/text hot path, [`orjson`](https://github.com/ijl/orjson) (a Rust library — no FFI crossing cost) for JSON parse/serialize, transcript parse cache keyed on `(mtime_ns, size)`, derived-output memoization, scoped icon rendering, lazy prompts drawer, and background feed prefetch.
+
+---
+
 ## 🚀 Getting Started
 
 ### Option 1: Standalone Desktop App (Recommended)
@@ -199,7 +223,19 @@ cd antigravity-rewind
 python app.py
 ```
 
-### Option 3: Build Standalone Executable
+### Option 3: Run with the Rust port (optional)
+The compiled Rust helper ships prebuilt in [`rust/rewind-text-rs/python/rewind_text_rs/`](rust/rewind-text-rs/python/rewind_text_rs/); `backend.py` picks it up automatically when importable and silently falls back to pure Python otherwise.
+
+```bash
+# Re-verify the Rust port end to end (starts the app twice, compares byte-for-byte)
+python test_rust_port_e2e.py
+python test_rust_port_http.py
+
+# Rebuild the Rust helper from source (optional)
+cd rust/rewind-text-rs && cargo build --release
+```
+
+### Option 4: Build Standalone Executable
 ```bash
 # Install PyInstaller
 pip install pyinstaller

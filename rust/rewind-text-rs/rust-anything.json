@@ -1,0 +1,97 @@
+{
+  "schema": "rust-anything/bridge@1",
+  "root": "C:\\Users\\hp3\\.deepai-code\\scratch\\2026-11-21-there-is-a-repo-named-9107dc2e\\antigravity-rewind-src\\ilyassbourass-antigravity-rewind-dcdeda8",
+  "unit": "rewind_text.py",
+  "language": "python",
+  "kind": "pyo3",
+  "crate_name": "rewind-text-rs",
+  "exports": [
+    {
+      "name": "clean_title_text",
+      "file": "rewind_text.py",
+      "line": 9,
+      "params": [
+        {
+          "name": "text",
+          "ts_type": "unknown",
+          "optional": false,
+          "rest": false
+        },
+        {
+          "name": "max_len",
+          "ts_type": "int",
+          "optional": true,
+          "rest": false,
+          "default": "45"
+        }
+      ],
+      "returns": "unknown",
+      "is_async": false,
+      "is_generator": false,
+      "type_params": [],
+      "uses_instanceof": false
+    },
+    {
+      "name": "format_bytes",
+      "file": "rewind_text.py",
+      "line": 33,
+      "params": [
+        {
+          "name": "bytes_count",
+          "ts_type": "number",
+          "optional": false,
+          "rest": false
+        }
+      ],
+      "returns": "unknown",
+      "is_async": false,
+      "is_generator": false,
+      "type_params": [],
+      "uses_instanceof": false
+    },
+    {
+      "name": "decode_varint",
+      "file": "rewind_text.py",
+      "line": 43,
+      "params": [
+        {
+          "name": "buf",
+          "ts_type": "unknown",
+          "optional": false,
+          "rest": false
+        },
+        {
+          "name": "offset",
+          "ts_type": "unknown",
+          "optional": false,
+          "rest": false
+        }
+      ],
+      "returns": "unknown",
+      "is_async": false,
+      "is_generator": false,
+      "type_params": [],
+      "uses_instanceof": false
+    },
+    {
+      "name": "encode_varint",
+      "file": "rewind_text.py",
+      "line": 57,
+      "params": [
+        {
+          "name": "v",
+          "ts_type": "number",
+          "optional": false,
+          "rest": false
+        }
+      ],
+      "returns": "unknown",
+      "is_async": false,
+      "is_generator": false,
+      "type_params": [],
+      "uses_instanceof": false
+    }
+  ],
+  "classes": [],
+  "js_only": []
+}

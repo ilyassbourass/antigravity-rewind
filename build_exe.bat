@@ -16,6 +16,8 @@ pyinstaller --noconfirm --clean --onefile --windowed ^
     --add-data "lucide.js;." ^
     --add-data "marked.js;." ^
     --add-data "backend.py;." ^
+    --add-data "rewind_text.py;." ^
+    --add-data "rustewind-text-rs\python;rustewind-text-rs\python" ^
     app.py
 
 if %ERRORLEVEL% equ 0 (

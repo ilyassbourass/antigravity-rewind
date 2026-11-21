@@ -873,10 +873,12 @@
       }
     }
 
-    function safeCreateIcons() {
+    function safeCreateIcons(root) {
       try {
         if (typeof lucide !== 'undefined' && lucide && typeof lucide.createIcons === 'function') {
-          safeCreateIcons();
+          // scope to the subtree that changed when one is given: avoids re-scanning
+          // the whole document on every render
+          lucide.createIcons(root ? { root: root } : undefined);
         }
       } catch (e) {
         console.warn('safeCreateIcons warning:', e);
@@ -975,12 +977,39 @@
       state.conversations = Array.isArray(convs) ? convs : [];
       renderSidebarConversations();
 
+      // Warm the feed caches of the most recent conversations in the background,
+      // so the first click on any of them is served from the server's memory.
+      prefetchFeeds();
+
       if (state.conversations.length > 0) {
         const target = state.activeConvId 
           ? (state.conversations.find(c => c.id === state.activeConvId) || state.conversations[0])
           : state.conversations[0];
         await selectConversation(target.id);
       }
+    }
+
+    // Background-warm get_chat_feed(cid, 250) for the most recent conversations.
+    // The server caches these; clicking one later is then a cache hit.
+    let _prefetchGen = 0;
+    function prefetchFeeds() {
+      const gen = ++_prefetchGen;
+      const targets = (state.conversations || []).slice(0, 5).map(c => c.id);
+      targets.forEach(cid => {
+        apiCall('get_chat_feed', [cid, 250]).then(() => {
+          if (gen === _prefetchGen && cid === state.activeConvId) {
+            // the user opened this conversation while we were prefetching it:
+            // refresh the view with the now-warm data
+            apiCall('get_chat_feed', [cid, 250]).then(feed => {
+              if (state.activeConvId === cid && Array.isArray(feed)) {
+                state.feedItems = feed;
+                renderChatFeed();
+                safeCreateIcons(document.getElementById('chat-feed-container'));
+              }
+            });
+          }
+        });
+      });
     }
 
     // Render Sidebar with Search Filter
@@ -1012,7 +1041,7 @@
         `;
       }).join('');
 
-      safeCreateIcons();
+      safeCreateIcons(document.getElementById('sidebar-conversations-list'));
       renderPromptsDrawer();
       if (state.sessionSearchQuery) {
         onSessionSearchInput(state.sessionSearchQuery);
@@ -1035,6 +1064,7 @@
         if (btn) {
           btn.classList.add('bg-sky-500/20', 'text-sky-300', 'border-sky-500/40');
         }
+        state.promptsDrawerDirty = true;
         renderPromptsDrawer();
       } else {
         drawer.classList.add('hidden');
@@ -1055,6 +1085,20 @@
       const countBadge = document.getElementById('prompts-drawer-count');
       const headerCount = document.getElementById('header-prompts-count');
       if (!container) return;
+      // the drawer is hidden most of the time: only pay for its DOM when it is
+      // visible (or about to be), and remember to refresh it on open
+      const isOpen = state.promptsDrawerOpen === true || !drawer.classList.contains('hidden');
+      if (!isOpen && state.promptsDrawerOpen !== true) {
+        state.promptsDrawerDirty = true;
+        // the header badge is always visible: keep it fresh even when skipping the DOM
+        const userItems = (state.userPrompts && state.userPrompts.length > 0)
+          ? state.userPrompts
+          : (state.feedItems || []).filter(item => item.type === 'user');
+        if (countBadge) countBadge.textContent = userItems.length;
+        if (headerCount) headerCount.textContent = userItems.length;
+        return;
+      }
+      state.promptsDrawerDirty = false;
 
       const userItems = (state.userPrompts && state.userPrompts.length > 0)
         ? state.userPrompts
@@ -1122,7 +1166,7 @@
         `;
       }).join('');
 
-      safeCreateIcons();
+      safeCreateIcons(container);
     }
 
     async function jumpToUserPrompt(stepIndex) {
@@ -1676,7 +1720,7 @@
         return '';
       }).join('');
 
-      safeCreateIcons();
+      safeCreateIcons(container);
     }
 
     // Markdown parse using marked.js

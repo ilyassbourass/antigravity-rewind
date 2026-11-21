@@ -1,0 +1,273 @@
+{"fn": "clean_title_text", "args": [[], 0], "ok": ""}
+{"fn": "clean_title_text", "args": [0, 7], "ok": ""}
+{"fn": "clean_title_text", "args": [null], "ok": ""}
+{"fn": "clean_title_text", "args": [[], -2147483648], "ok": ""}
+{"fn": "clean_title_text", "args": [{"a": "b"}, 42], "error": "TypeError: expected string or bytes-like object, got 'dict'"}
+{"fn": "clean_title_text", "args": [0, -100], "ok": ""}
+{"fn": "clean_title_text", "args": [{"a": {"b": "c"}}, 2], "error": "TypeError: expected string or bytes-like object, got 'dict'"}
+{"fn": "clean_title_text", "args": [["a", 1], {"$undefined": true}], "error": "TypeError: expected string or bytes-like object, got 'list'"}
+{"fn": "clean_title_text", "args": [[], {"$undefined": true}], "ok": ""}
+{"fn": "clean_title_text", "args": [true], "error": "TypeError: expected string or bytes-like object, got 'bool'"}
+{"fn": "clean_title_text", "args": [{"a": "b"}, 1], "error": "TypeError: expected string or bytes-like object, got 'dict'"}
+{"fn": "clean_title_text", "args": [{"a": {"b": "c"}}, 255], "error": "TypeError: expected string or bytes-like object, got 'dict'"}
+{"fn": "clean_title_text", "args": [{}, 1], "ok": ""}
+{"fn": "clean_title_text", "args": [{"a": "b"}, 2], "error": "TypeError: expected string or bytes-like object, got 'dict'"}
+{"fn": "clean_title_text", "args": [{"a": {"b": "c"}}, 7], "error": "TypeError: expected string or bytes-like object, got 'dict'"}
+{"fn": "clean_title_text", "args": [{"a": {"b": "c"}}, -1], "error": "TypeError: expected string or bytes-like object, got 'dict'"}
+{"fn": "clean_title_text", "args": [true, -2147483648], "error": "TypeError: expected string or bytes-like object, got 'bool'"}
+{"fn": "clean_title_text", "args": [{"a": {"b": "c"}}, -100], "error": "TypeError: expected string or bytes-like object, got 'dict'"}
+{"fn": "clean_title_text", "args": [["a", 1], 9223372036854775807], "error": "TypeError: expected string or bytes-like object, got 'list'"}
+{"fn": "clean_title_text", "args": [["a", 1]], "error": "TypeError: expected string or bytes-like object, got 'list'"}
+{"fn": "clean_title_text", "args": [[], 42], "ok": ""}
+{"fn": "clean_title_text", "args": ["x", 1], "ok": "X"}
+{"fn": "clean_title_text", "args": [{}, 9223372036854775807], "ok": ""}
+{"fn": "clean_title_text", "args": [["a", 1], 2147483647], "error": "TypeError: expected string or bytes-like object, got 'list'"}
+{"fn": "clean_title_text", "args": ["x"], "ok": "X"}
+{"fn": "clean_title_text", "args": [null, 42], "ok": ""}
+{"fn": "clean_title_text", "args": [{}, 7], "ok": ""}
+{"fn": "clean_title_text", "args": [[], 255], "ok": ""}
+{"fn": "clean_title_text", "args": [null, 2], "ok": ""}
+{"fn": "clean_title_text", "args": [[], 1], "ok": ""}
+{"fn": "clean_title_text", "args": [{"a": {"b": "c"}}, 100], "error": "TypeError: expected string or bytes-like object, got 'dict'"}
+{"fn": "clean_title_text", "args": [{"a": "b"}], "error": "TypeError: expected string or bytes-like object, got 'dict'"}
+{"fn": "clean_title_text", "args": [null, {"$undefined": true}], "ok": ""}
+{"fn": "clean_title_text", "args": [true, -100], "error": "TypeError: expected string or bytes-like object, got 'bool'"}
+{"fn": "clean_title_text", "args": ["x", -2147483648], "ok": "..."}
+{"fn": "clean_title_text", "args": [{}, 42], "ok": ""}
+{"fn": "clean_title_text", "args": [["a", 1], 7], "error": "TypeError: expected string or bytes-like object, got 'list'"}
+{"fn": "clean_title_text", "args": [{}, 2], "ok": ""}
+{"fn": "clean_title_text", "args": [{"a": {"b": "c"}}, 1], "error": "TypeError: expected string or bytes-like object, got 'dict'"}
+{"fn": "clean_title_text", "args": [{"a": {"b": "c"}}, 42], "error": "TypeError: expected string or bytes-like object, got 'dict'"}
+{"fn": "clean_title_text", "args": [{"a": "b"}, 7], "error": "TypeError: expected string or bytes-like object, got 'dict'"}
+{"fn": "clean_title_text", "args": ["x", -1], "ok": "..."}
+{"fn": "clean_title_text", "args": [true, -1], "error": "TypeError: expected string or bytes-like object, got 'bool'"}
+{"fn": "clean_title_text", "args": [null, 1], "ok": ""}
+{"fn": "clean_title_text", "args": [{"a": "b"}, 255], "error": "TypeError: expected string or bytes-like object, got 'dict'"}
+{"fn": "clean_title_text", "args": [{}, {"$undefined": true}], "ok": ""}
+{"fn": "clean_title_text", "args": [0, -2147483648], "ok": ""}
+{"fn": "clean_title_text", "args": [{"a": {"b": "c"}}], "error": "TypeError: expected string or bytes-like object, got 'dict'"}
+{"fn": "clean_title_text", "args": [null, 2147483647], "ok": ""}
+{"fn": "clean_title_text", "args": [true, 9223372036854775807], "error": "TypeError: expected string or bytes-like object, got 'bool'"}
+{"fn": "clean_title_text", "args": [{"a": "b"}, 2147483647], "error": "TypeError: expected string or bytes-like object, got 'dict'"}
+{"fn": "clean_title_text", "args": ["x", {"$undefined": true}], "ok": "X"}
+{"fn": "clean_title_text", "args": [["a", 1], -100], "error": "TypeError: expected string or bytes-like object, got 'list'"}
+{"fn": "clean_title_text", "args": [true, {"$undefined": true}], "error": "TypeError: expected string or bytes-like object, got 'bool'"}
+{"fn": "clean_title_text", "args": [null, -100], "ok": ""}
+{"fn": "clean_title_text", "args": [0, 0], "ok": ""}
+{"fn": "clean_title_text", "args": [["a", 1], 100], "error": "TypeError: expected string or bytes-like object, got 'list'"}
+{"fn": "clean_title_text", "args": [{"a": "b"}, -100], "error": "TypeError: expected string or bytes-like object, got 'dict'"}
+{"fn": "clean_title_text", "args": [[], -1], "ok": ""}
+{"fn": "clean_title_text", "args": [true, 0], "error": "TypeError: expected string or bytes-like object, got 'bool'"}
+{"fn": "clean_title_text", "args": [{"a": "b"}, 9223372036854775807], "error": "TypeError: expected string or bytes-like object, got 'dict'"}
+{"fn": "clean_title_text", "args": [null, 7], "ok": ""}
+{"fn": "clean_title_text", "args": [{}, -2147483648], "ok": ""}
+{"fn": "clean_title_text", "args": [null, 100], "ok": ""}
+{"fn": "clean_title_text", "args": [["a", 1], 0], "error": "TypeError: expected string or bytes-like object, got 'list'"}
+{"fn": "clean_title_text", "args": ["x", 7], "ok": "X"}
+{"fn": "clean_title_text", "args": [0, -1], "ok": ""}
+{"fn": "clean_title_text", "args": [{}, 0], "ok": ""}
+{"fn": "clean_title_text", "args": [{"a": {"b": "c"}}, 9223372036854775807], "error": "TypeError: expected string or bytes-like object, got 'dict'"}
+{"fn": "clean_title_text", "args": [["a", 1], 1], "error": "TypeError: expected string or bytes-like object, got 'list'"}
+{"fn": "clean_title_text", "args": [null, -1], "ok": ""}
+{"fn": "clean_title_text", "args": [null, 0], "ok": ""}
+{"fn": "clean_title_text", "args": [0], "ok": ""}
+{"fn": "clean_title_text", "args": [0, 2147483647], "ok": ""}
+{"fn": "clean_title_text", "args": [{"a": "b"}, {"$undefined": true}], "error": "TypeError: expected string or bytes-like object, got 'dict'"}
+{"fn": "clean_title_text", "args": [{"a": {"b": "c"}}, 2147483647], "error": "TypeError: expected string or bytes-like object, got 'dict'"}
+{"fn": "clean_title_text", "args": [["a", 1], -1], "error": "TypeError: expected string or bytes-like object, got 'list'"}
+{"fn": "clean_title_text", "args": [0, 1], "ok": ""}
+{"fn": "clean_title_text", "args": [0, {"$undefined": true}], "ok": ""}
+{"fn": "clean_title_text", "args": [{"a": "b"}, 0], "error": "TypeError: expected string or bytes-like object, got 'dict'"}
+{"fn": "clean_title_text", "args": [true, 7], "error": "TypeError: expected string or bytes-like object, got 'bool'"}
+{"fn": "clean_title_text", "args": [["a", 1], 42], "error": "TypeError: expected string or bytes-like object, got 'list'"}
+{"fn": "clean_title_text", "args": [{}], "ok": ""}
+{"fn": "clean_title_text", "args": [{}, -1], "ok": ""}
+{"fn": "clean_title_text", "args": [0, 255], "ok": ""}
+{"fn": "clean_title_text", "args": [[], 100], "ok": ""}
+{"fn": "clean_title_text", "args": [null, 9223372036854775807], "ok": ""}
+{"fn": "clean_title_text", "args": [{}, 2147483647], "ok": ""}
+{"fn": "clean_title_text", "args": [{"a": {"b": "c"}}, {"$undefined": true}], "error": "TypeError: expected string or bytes-like object, got 'dict'"}
+{"fn": "clean_title_text", "args": [0, 42], "ok": ""}
+{"fn": "clean_title_text", "args": ["x", 2147483647], "ok": "X"}
+{"fn": "clean_title_text", "args": [{"a": "b"}, 100], "error": "TypeError: expected string or bytes-like object, got 'dict'"}
+{"fn": "clean_title_text", "args": [[], 7], "ok": ""}
+{"fn": "clean_title_text", "args": [true, 255], "error": "TypeError: expected string or bytes-like object, got 'bool'"}
+{"fn": "clean_title_text", "args": ["x", 9223372036854775807], "ok": "X"}
+{"fn": "clean_title_text", "args": [[], -100], "ok": ""}
+{"fn": "clean_title_text", "args": [[]], "ok": ""}
+{"fn": "clean_title_text", "args": ["x", 255], "ok": "X"}
+{"fn": "clean_title_text", "args": [["a", 1], -2147483648], "error": "TypeError: expected string or bytes-like object, got 'list'"}
+{"fn": "clean_title_text", "args": [{}, 255], "ok": ""}
+{"fn": "clean_title_text", "args": [[], 9223372036854775807], "ok": ""}
+{"fn": "clean_title_text", "args": [0, 100], "ok": ""}
+{"fn": "clean_title_text", "args": [0, 2], "ok": ""}
+{"fn": "clean_title_text", "args": ["x", 42], "ok": "X"}
+{"fn": "clean_title_text", "args": ["x", 100], "ok": "X"}
+{"fn": "clean_title_text", "args": [true, 42], "error": "TypeError: expected string or bytes-like object, got 'bool'"}
+{"fn": "clean_title_text", "args": [{"a": "b"}, -1], "error": "TypeError: expected string or bytes-like object, got 'dict'"}
+{"fn": "clean_title_text", "args": [null, 255], "ok": ""}
+{"fn": "clean_title_text", "args": [true, 2147483647], "error": "TypeError: expected string or bytes-like object, got 'bool'"}
+{"fn": "clean_title_text", "args": [0, 9223372036854775807], "ok": ""}
+{"fn": "clean_title_text", "args": [true, 2], "error": "TypeError: expected string or bytes-like object, got 'bool'"}
+{"fn": "clean_title_text", "args": [{"a": {"b": "c"}}, -2147483648], "error": "TypeError: expected string or bytes-like object, got 'dict'"}
+{"fn": "clean_title_text", "args": ["x", 2], "ok": "X"}
+{"fn": "clean_title_text", "args": [["a", 1], 255], "error": "TypeError: expected string or bytes-like object, got 'list'"}
+{"fn": "clean_title_text", "args": [[], 2], "ok": ""}
+{"fn": "clean_title_text", "args": [true, 1], "error": "TypeError: expected string or bytes-like object, got 'bool'"}
+{"fn": "clean_title_text", "args": [true, 100], "error": "TypeError: expected string or bytes-like object, got 'bool'"}
+{"fn": "clean_title_text", "args": [{"a": {"b": "c"}}, 0], "error": "TypeError: expected string or bytes-like object, got 'dict'"}
+{"fn": "clean_title_text", "args": [null, -2147483648], "ok": ""}
+{"fn": "clean_title_text", "args": ["x", 0], "ok": "..."}
+{"fn": "clean_title_text", "args": [[], 2147483647], "ok": ""}
+{"fn": "clean_title_text", "args": [["a", 1], 2], "error": "TypeError: expected string or bytes-like object, got 'list'"}
+{"fn": "clean_title_text", "args": [{"a": "b"}, -2147483648], "error": "TypeError: expected string or bytes-like object, got 'dict'"}
+{"fn": "clean_title_text", "args": [{}, 100], "ok": ""}
+{"fn": "clean_title_text", "args": [{}, -100], "ok": ""}
+{"fn": "clean_title_text", "args": ["x", -100], "ok": "..."}
+{"fn": "clean_title_text", "args": [{"zebra": 1, "apple": 2, "10": 3, "2": 4, "é": 5, "Apple": 6}, 0], "error": "TypeError: expected string or bytes-like object, got 'dict'"}
+{"fn": "clean_title_text", "args": [{"n": 9007199254740993, "f": 1e+21, "t": 0.1, "neg": -7}, 0], "error": "TypeError: expected string or bytes-like object, got 'dict'"}
+{"fn": "clean_title_text", "args": [[3, 1, 2], 0], "error": "TypeError: expected string or bytes-like object, got 'list'"}
+{"fn": "clean_title_text", "args": [[], -7], "ok": ""}
+{"fn": "clean_title_text", "args": [[], 2147483648], "ok": ""}
+{"fn": "clean_title_text", "args": [[], -2147483649], "ok": ""}
+{"fn": "clean_title_text", "args": [[], 9007199254740993], "ok": ""}
+{"fn": "clean_title_text", "args": [[], -9223372036854775808], "ok": ""}
+{"fn": "format_bytes", "args": [0.5], "ok": "0.5 B"}
+{"fn": "format_bytes", "args": [3.0], "ok": "3.0 B"}
+{"fn": "format_bytes", "args": [-2.5], "ok": "-2.5 B"}
+{"fn": "format_bytes", "args": [{"$num": "-Infinity"}], "ok": "-inf B"}
+{"fn": "format_bytes", "args": [-1.0], "ok": "-1.0 B"}
+{"fn": "format_bytes", "args": [1000000.0], "ok": "976.6 KB"}
+{"fn": "format_bytes", "args": [1.0], "ok": "1.0 B"}
+{"fn": "format_bytes", "args": [2147483648], "ok": "2.0 GB"}
+{"fn": "format_bytes", "args": [{"$num": "-0"}], "ok": "-0.0 B"}
+{"fn": "format_bytes", "args": [2.0], "ok": "2.0 B"}
+{"fn": "format_bytes", "args": [0.0], "ok": "0.0 B"}
+{"fn": "format_bytes", "args": [10], "ok": "10.0 B"}
+{"fn": "format_bytes", "args": [42.0], "ok": "42.0 B"}
+{"fn": "format_bytes", "args": [{"$num": "NaN"}], "ok": "nan B"}
+{"fn": "format_bytes", "args": [{"$num": "Infinity"}], "ok": "inf GB"}
+{"fn": "format_bytes", "args": [1000], "ok": "1000.0 B"}
+{"fn": "format_bytes", "args": [100.0], "ok": "100.0 B"}
+{"fn": "format_bytes", "args": [9007199254740992.0], "ok": "8388608.0 GB"}
+{"fn": "format_bytes", "args": [-7.5], "ok": "-7.5 B"}
+{"fn": "format_bytes", "args": [0.1], "ok": "0.1 B"}
+{"fn": "format_bytes", "args": [0.30000000000000004], "ok": "0.3 B"}
+{"fn": "format_bytes", "args": [1e+21], "ok": "931322574615.5 GB"}
+{"fn": "format_bytes", "args": [1e-07], "ok": "0.0 B"}
+{"fn": "format_bytes", "args": [5e-324], "ok": "0.0 B"}
+{"fn": "format_bytes", "args": [1.7976931348623157e+308], "ok": "167423219872854250310480057943336997924438274955232624522333477440436613541123027690304032184897808517832736441413296818951444073477260938629943455293343883926095357701695786860068785110851124808262911167419640293628520552910140667265102788183953006076438190605626183719130397942773345747264478380032.0 GB"}
+{"fn": "decode_varint", "args": [{"a": {"b": "c"}}, "x"], "error": "TypeError: '<' not supported between instances of 'str' and 'int'"}
+{"fn": "decode_varint", "args": [{"a": "b"}, "x"], "error": "TypeError: '<' not supported between instances of 'str' and 'int'"}
+{"fn": "decode_varint", "args": [null, null], "error": "TypeError: object of type 'NoneType' has no len()"}
+{"fn": "decode_varint", "args": [{}, true], "ok": {"$tuple": [0, true]}}
+{"fn": "decode_varint", "args": [true, {}], "error": "TypeError: object of type 'bool' has no len()"}
+{"fn": "decode_varint", "args": [{"a": "b"}, {"a": {"b": "c"}}], "error": "TypeError: '<' not supported between instances of 'dict' and 'int'"}
+{"fn": "decode_varint", "args": [{}, {"a": {"b": "c"}}], "error": "TypeError: '<' not supported between instances of 'dict' and 'int'"}
+{"fn": "decode_varint", "args": [0, 0], "error": "TypeError: object of type 'int' has no len()"}
+{"fn": "decode_varint", "args": [[], true], "ok": {"$tuple": [0, true]}}
+{"fn": "decode_varint", "args": [null, []], "error": "TypeError: object of type 'NoneType' has no len()"}
+{"fn": "decode_varint", "args": [null, {}], "error": "TypeError: object of type 'NoneType' has no len()"}
+{"fn": "decode_varint", "args": [null, "x"], "error": "TypeError: object of type 'NoneType' has no len()"}
+{"fn": "decode_varint", "args": [{"a": "b"}, 0], "error": "KeyError: 0"}
+{"fn": "decode_varint", "args": [["a", 1], "x"], "error": "TypeError: '<' not supported between instances of 'str' and 'int'"}
+{"fn": "decode_varint", "args": [[], []], "error": "TypeError: '<' not supported between instances of 'list' and 'int'"}
+{"fn": "decode_varint", "args": [{"a": {"b": "c"}}, {"a": {"b": "c"}}], "error": "TypeError: '<' not supported between instances of 'dict' and 'int'"}
+{"fn": "decode_varint", "args": [{"a": "b"}, null], "error": "TypeError: '<' not supported between instances of 'NoneType' and 'int'"}
+{"fn": "decode_varint", "args": [["a", 1], ["a", 1]], "error": "TypeError: '<' not supported between instances of 'list' and 'int'"}
+{"fn": "decode_varint", "args": ["x", ["a", 1]], "error": "TypeError: '<' not supported between instances of 'list' and 'int'"}
+{"fn": "decode_varint", "args": [null, ["a", 1]], "error": "TypeError: object of type 'NoneType' has no len()"}
+{"fn": "decode_varint", "args": [0, true], "error": "TypeError: object of type 'int' has no len()"}
+{"fn": "decode_varint", "args": [0, null], "error": "TypeError: object of type 'int' has no len()"}
+{"fn": "decode_varint", "args": ["x", null], "error": "TypeError: '<' not supported between instances of 'NoneType' and 'int'"}
+{"fn": "decode_varint", "args": [null, {"a": {"b": "c"}}], "error": "TypeError: object of type 'NoneType' has no len()"}
+{"fn": "decode_varint", "args": [{"a": "b"}, {}], "error": "TypeError: '<' not supported between instances of 'dict' and 'int'"}
+{"fn": "decode_varint", "args": ["X", "x"], "error": "TypeError: '<' not supported between instances of 'str' and 'int'"}
+{"fn": "decode_varint", "args": ["x", {"a": "b"}], "error": "TypeError: '<' not supported between instances of 'dict' and 'int'"}
+{"fn": "decode_varint", "args": [[], 0], "ok": {"$tuple": [0, 0]}}
+{"fn": "decode_varint", "args": [["a", 1], 0], "error": "TypeError: unsupported operand type(s) for &: 'str' and 'int'"}
+{"fn": "decode_varint", "args": [0, {"a": {"b": "c"}}], "error": "TypeError: object of type 'int' has no len()"}
+{"fn": "decode_varint", "args": [["a", 1], []], "error": "TypeError: '<' not supported between instances of 'list' and 'int'"}
+{"fn": "decode_varint", "args": [[], null], "error": "TypeError: '<' not supported between instances of 'NoneType' and 'int'"}
+{"fn": "decode_varint", "args": [{"a": "b"}, []], "error": "TypeError: '<' not supported between instances of 'list' and 'int'"}
+{"fn": "decode_varint", "args": [{}, {"a": "b"}], "error": "TypeError: '<' not supported between instances of 'dict' and 'int'"}
+{"fn": "decode_varint", "args": [{"a": {"b": "c"}}, []], "error": "TypeError: '<' not supported between instances of 'list' and 'int'"}
+{"fn": "decode_varint", "args": [[], "x"], "error": "TypeError: '<' not supported between instances of 'str' and 'int'"}
+{"fn": "decode_varint", "args": [["a", 1], null], "error": "TypeError: '<' not supported between instances of 'NoneType' and 'int'"}
+{"fn": "decode_varint", "args": [true, {"a": {"b": "c"}}], "error": "TypeError: object of type 'bool' has no len()"}
+{"fn": "decode_varint", "args": [0, {"a": "b"}], "error": "TypeError: object of type 'int' has no len()"}
+{"fn": "decode_varint", "args": [0, "x"], "error": "TypeError: object of type 'int' has no len()"}
+{"fn": "decode_varint", "args": [[], {"a": {"b": "c"}}], "error": "TypeError: '<' not supported between instances of 'dict' and 'int'"}
+{"fn": "decode_varint", "args": [{"a": {"b": "c"}}, null], "error": "TypeError: '<' not supported between instances of 'NoneType' and 'int'"}
+{"fn": "decode_varint", "args": [["a", 1], {"a": "b"}], "error": "TypeError: '<' not supported between instances of 'dict' and 'int'"}
+{"fn": "decode_varint", "args": [true, {"a": "b"}], "error": "TypeError: object of type 'bool' has no len()"}
+{"fn": "decode_varint", "args": ["x", {"a": {"b": "c"}}], "error": "TypeError: '<' not supported between instances of 'dict' and 'int'"}
+{"fn": "decode_varint", "args": [null, 0], "error": "TypeError: object of type 'NoneType' has no len()"}
+{"fn": "decode_varint", "args": [{"a": "b"}, ["a", 1]], "error": "TypeError: '<' not supported between instances of 'list' and 'int'"}
+{"fn": "decode_varint", "args": ["x", "x"], "error": "TypeError: '<' not supported between instances of 'str' and 'int'"}
+{"fn": "decode_varint", "args": ["x", {}], "error": "TypeError: '<' not supported between instances of 'dict' and 'int'"}
+{"fn": "decode_varint", "args": [null, true], "error": "TypeError: object of type 'NoneType' has no len()"}
+{"fn": "decode_varint", "args": ["x", true], "ok": {"$tuple": [0, true]}}
+{"fn": "decode_varint", "args": [{}, null], "error": "TypeError: '<' not supported between instances of 'NoneType' and 'int'"}
+{"fn": "decode_varint", "args": [0, {}], "error": "TypeError: object of type 'int' has no len()"}
+{"fn": "decode_varint", "args": [[], {}], "error": "TypeError: '<' not supported between instances of 'dict' and 'int'"}
+{"fn": "decode_varint", "args": [["a", 1], {"a": {"b": "c"}}], "error": "TypeError: '<' not supported between instances of 'dict' and 'int'"}
+{"fn": "decode_varint", "args": [true, true], "error": "TypeError: object of type 'bool' has no len()"}
+{"fn": "decode_varint", "args": [true, ["a", 1]], "error": "TypeError: object of type 'bool' has no len()"}
+{"fn": "decode_varint", "args": ["x", 0], "error": "TypeError: unsupported operand type(s) for &: 'str' and 'int'"}
+{"fn": "decode_varint", "args": ["x", []], "error": "TypeError: '<' not supported between instances of 'list' and 'int'"}
+{"fn": "decode_varint", "args": [{"a": {"b": "c"}}, true], "ok": {"$tuple": [0, true]}}
+{"fn": "decode_varint", "args": [["a", 1], {}], "error": "TypeError: '<' not supported between instances of 'dict' and 'int'"}
+{"fn": "decode_varint", "args": [{"a": "b"}, true], "ok": {"$tuple": [0, true]}}
+{"fn": "decode_varint", "args": [[], {"a": "b"}], "error": "TypeError: '<' not supported between instances of 'dict' and 'int'"}
+{"fn": "decode_varint", "args": [null, {"a": "b"}], "error": "TypeError: object of type 'NoneType' has no len()"}
+{"fn": "decode_varint", "args": [true, 0], "error": "TypeError: object of type 'bool' has no len()"}
+{"fn": "decode_varint", "args": [true, []], "error": "TypeError: object of type 'bool' has no len()"}
+{"fn": "decode_varint", "args": [true, "x"], "error": "TypeError: object of type 'bool' has no len()"}
+{"fn": "decode_varint", "args": [{"a": "b"}, {"a": "b"}], "error": "TypeError: '<' not supported between instances of 'dict' and 'int'"}
+{"fn": "decode_varint", "args": [["a", 1], true], "ok": {"$tuple": [1, 2]}}
+{"fn": "decode_varint", "args": [{"a": {"b": "c"}}, ["a", 1]], "error": "TypeError: '<' not supported between instances of 'list' and 'int'"}
+{"fn": "decode_varint", "args": [{}, {}], "error": "TypeError: '<' not supported between instances of 'dict' and 'int'"}
+{"fn": "decode_varint", "args": [{}, "x"], "error": "TypeError: '<' not supported between instances of 'str' and 'int'"}
+{"fn": "decode_varint", "args": [0, ["a", 1]], "error": "TypeError: object of type 'int' has no len()"}
+{"fn": "decode_varint", "args": [{}, 0], "ok": {"$tuple": [0, 0]}}
+{"fn": "decode_varint", "args": [{"a": {"b": "c"}}, {}], "error": "TypeError: '<' not supported between instances of 'dict' and 'int'"}
+{"fn": "decode_varint", "args": [0, []], "error": "TypeError: object of type 'int' has no len()"}
+{"fn": "decode_varint", "args": [{}, []], "error": "TypeError: '<' not supported between instances of 'list' and 'int'"}
+{"fn": "decode_varint", "args": [{"a": {"b": "c"}}, {"a": "b"}], "error": "TypeError: '<' not supported between instances of 'dict' and 'int'"}
+{"fn": "decode_varint", "args": [{"a": {"b": "c"}}, 0], "error": "KeyError: 0"}
+{"fn": "decode_varint", "args": [true, null], "error": "TypeError: object of type 'bool' has no len()"}
+{"fn": "decode_varint", "args": [{}, ["a", 1]], "error": "TypeError: '<' not supported between instances of 'list' and 'int'"}
+{"fn": "decode_varint", "args": [[], ["a", 1]], "error": "TypeError: '<' not supported between instances of 'list' and 'int'"}
+{"fn": "decode_varint", "args": ["x", "X"], "error": "TypeError: '<' not supported between instances of 'str' and 'int'"}
+{"fn": "decode_varint", "args": [{"zebra": 1, "apple": 2, "10": 3, "2": 4, "é": 5, "Apple": 6}, "x"], "error": "TypeError: '<' not supported between instances of 'str' and 'int'"}
+{"fn": "decode_varint", "args": [{"n": 9007199254740993, "f": 1e+21, "t": 0.1, "neg": -7}, "x"], "error": "TypeError: '<' not supported between instances of 'str' and 'int'"}
+{"fn": "decode_varint", "args": [[3, 1, 2], "x"], "error": "TypeError: '<' not supported between instances of 'str' and 'int'"}
+{"fn": "decode_varint", "args": [{"a": {"b": "c"}}, {"zebra": 1, "apple": 2, "10": 3, "2": 4, "é": 5, "Apple": 6}], "error": "TypeError: '<' not supported between instances of 'dict' and 'int'"}
+{"fn": "decode_varint", "args": [{"a": {"b": "c"}}, {"n": 9007199254740993, "f": 1e+21, "t": 0.1, "neg": -7}], "error": "TypeError: '<' not supported between instances of 'dict' and 'int'"}
+{"fn": "decode_varint", "args": [{"a": {"b": "c"}}, [3, 1, 2]], "error": "TypeError: '<' not supported between instances of 'list' and 'int'"}
+{"fn": "encode_varint", "args": [0.0], "error": "TypeError: unsupported operand type(s) for &: 'float' and 'int'"}
+{"fn": "encode_varint", "args": [-1.0], "error": "TypeError: unsupported operand type(s) for &: 'float' and 'int'"}
+{"fn": "encode_varint", "args": [100.0], "error": "TypeError: unsupported operand type(s) for &: 'float' and 'int'"}
+{"fn": "encode_varint", "args": [{"$num": "Infinity"}], "error": "TypeError: unsupported operand type(s) for &: 'float' and 'int'"}
+{"fn": "encode_varint", "args": [1000.0], "error": "TypeError: unsupported operand type(s) for &: 'float' and 'int'"}
+{"fn": "encode_varint", "args": [-2.5], "error": "TypeError: unsupported operand type(s) for &: 'float' and 'int'"}
+{"fn": "encode_varint", "args": [0.5], "error": "TypeError: unsupported operand type(s) for &: 'float' and 'int'"}
+{"fn": "encode_varint", "args": [42], "ok": {"$bytes": [42]}}
+{"fn": "encode_varint", "args": [2.0], "error": "TypeError: unsupported operand type(s) for &: 'float' and 'int'"}
+{"fn": "encode_varint", "args": [3.0], "error": "TypeError: unsupported operand type(s) for &: 'float' and 'int'"}
+{"fn": "encode_varint", "args": [{"$num": "NaN"}], "error": "TypeError: unsupported operand type(s) for &: 'float' and 'int'"}
+{"fn": "encode_varint", "args": [{"$num": "-Infinity"}], "error": "TypeError: unsupported operand type(s) for &: 'float' and 'int'"}
+{"fn": "encode_varint", "args": [9007199254740992.0], "error": "TypeError: unsupported operand type(s) for &: 'float' and 'int'"}
+{"fn": "encode_varint", "args": [1.0], "error": "TypeError: unsupported operand type(s) for &: 'float' and 'int'"}
+{"fn": "encode_varint", "args": [{"$num": "-0"}], "error": "TypeError: unsupported operand type(s) for &: 'float' and 'int'"}
+{"fn": "encode_varint", "args": [10], "ok": {"$bytes": [10]}}
+{"fn": "encode_varint", "args": [1000000.0], "error": "TypeError: unsupported operand type(s) for &: 'float' and 'int'"}
+{"fn": "encode_varint", "args": [2147483648.0], "error": "TypeError: unsupported operand type(s) for &: 'float' and 'int'"}
+{"fn": "encode_varint", "args": [-7.5], "error": "TypeError: unsupported operand type(s) for &: 'float' and 'int'"}
+{"fn": "encode_varint", "args": [0.1], "error": "TypeError: unsupported operand type(s) for &: 'float' and 'int'"}
+{"fn": "encode_varint", "args": [0.30000000000000004], "error": "TypeError: unsupported operand type(s) for &: 'float' and 'int'"}
+{"fn": "encode_varint", "args": [1e+21], "error": "TypeError: unsupported operand type(s) for &: 'float' and 'int'"}
+{"fn": "encode_varint", "args": [1e-07], "error": "TypeError: unsupported operand type(s) for &: 'float' and 'int'"}
+{"fn": "encode_varint", "args": [5e-324], "error": "TypeError: unsupported operand type(s) for &: 'float' and 'int'"}
+{"fn": "encode_varint", "args": [1.7976931348623157e+308], "error": "TypeError: unsupported operand type(s) for &: 'float' and 'int'"}

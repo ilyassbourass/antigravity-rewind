@@ -3,7 +3,129 @@ import json
 import sqlite3
 import shutil
 import re
+import sys
 from datetime import datetime
+
+# orjson (Rust) when available: 2-5x faster loads/dumps than the stdlib C encoder
+try:
+    import orjson as _orjson
+
+    def _jloads(s):
+        return _orjson.loads(s)
+
+    def _jdumps(o):
+        return _orjson.dumps(o).decode("utf-8")
+except Exception:
+    _jloads = json.loads
+    _jdumps = json.dumps
+
+# --- Rust port (rewind-text-rs) -------------------------------------------------
+# When the compiled crate is present, the pure-logic functions below delegate to it;
+# otherwise the original Python bodies run unchanged. See rust/rewind-text-rs/.
+try:
+    _RS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "rust", "rewind-text-rs", "python")
+    if os.path.isdir(_RS_DIR) and _RS_DIR not in sys.path:
+        sys.path.insert(0, _RS_DIR)
+    from rewind_text_rs import (
+        clean_title_text as _rs_clean_title_text,
+        format_bytes as _rs_format_bytes,
+        decode_varint as _rs_decode_varint,
+        encode_varint as _rs_encode_varint,
+    )
+    _RUST_PORT = True
+except Exception:
+    _RUST_PORT = False
+# --------------------------------------------------------------------------------
+
+# --- transcript parse cache -----------------------------------------------------
+# Every transcript consumer (steps, feed, prompts, detail, search, export) used to
+# re-read and re-parse the same JSONL file. Parse once per file version, keyed on
+# (mtime_ns, size), so rollbacks/edits refresh automatically. LRU-capped.
+from collections import OrderedDict as _OrderedDict
+
+_TRANSCRIPT_CACHE = _OrderedDict()
+_TRANSCRIPT_CACHE_MAX = 8
+
+
+def _load_transcript(path):
+    """Parsed JSON objects (or None for unparseable lines), in file line order."""
+    try:
+        st = os.stat(path)
+    except OSError:
+        return []
+    key = (st.st_mtime_ns, st.st_size)
+    hit = _TRANSCRIPT_CACHE.get(path)
+    if hit is not None and hit[0] == key:
+        _TRANSCRIPT_CACHE.move_to_end(path)
+        return hit[1]
+    lines = []
+    with open(path, "r", encoding="utf-8", errors="ignore") as f:
+        for line in f:
+            try:
+                lines.append(_jloads(line))
+            except Exception:
+                lines.append(None)
+    _TRANSCRIPT_CACHE[path] = (key, lines)
+    if len(_TRANSCRIPT_CACHE) > _TRANSCRIPT_CACHE_MAX:
+        _TRANSCRIPT_CACHE.popitem(last=False)
+    return lines
+
+# Derived-output memoization: full API results (steps/feed/prompts/search) keyed on the
+# file version + call arguments. UI re-visits and polls become O(1).
+_DERIVED_CACHE = _OrderedDict()
+_DERIVED_CACHE_MAX = 12
+
+
+def _fstat_key(path):
+    st = os.stat(path)
+    return (st.st_mtime_ns, st.st_size)
+
+
+def _cache_get(key):
+    hit = _DERIVED_CACHE.get(key)
+    if hit is not None:
+        _DERIVED_CACHE.move_to_end(key)
+    return hit
+
+
+def _cache_put(key, value):
+    _DERIVED_CACHE[key] = value
+    if len(_DERIVED_CACHE) > _DERIVED_CACHE_MAX:
+        _DERIVED_CACHE.popitem(last=False)
+    return value
+
+
+def _kept_lines_for_rollback(path, raw_lines, target_step_index):
+    """Raw transcript lines kept when rolling back: everything up to (and including)
+    the last line whose parsed step_index is <= target. Reuses the parse cache when
+    the file version is current instead of re-parsing 2x N lines."""
+    parsed = None
+    try:
+        st = os.stat(path)
+        cached = _TRANSCRIPT_CACHE.get(path)
+        if cached and cached[0] == (st.st_mtime_ns, st.st_size) and len(cached[1]) == len(raw_lines):
+            parsed = cached[1]
+    except OSError:
+        pass
+    kept = []
+    for i, line in enumerate(raw_lines):
+        if not line.strip():
+            continue
+        try:
+            obj = parsed[i] if parsed is not None else _jloads(line)
+            if obj is None:
+                raise ValueError
+            if "step_index" in obj:
+                if obj["step_index"] <= target_step_index:
+                    kept.append(line)
+                else:
+                    break
+            else:
+                kept.append(line)
+        except Exception:
+            kept.append(line)
+    return kept
+# --------------------------------------------------------------------------------
 
 class RewindBackend:
     def __init__(self, base_path=None):
@@ -43,6 +165,8 @@ class RewindBackend:
         }
 
     def clean_title_text(self, text, max_len=45):
+        if _RUST_PORT:
+            return _rs_clean_title_text(text, max_len)
         if not text:
             return ""
         text = re.sub(r'<[^>]+>', ' ', text)
@@ -325,6 +449,10 @@ class RewindBackend:
         if not os.path.exists(target_path):
             return []
 
+        _ckey = ("feed", target_path, limit) + _fstat_key(target_path)
+        _hit = _cache_get(_ckey)
+        if _hit is not None:
+            return _hit
         feed = []
         current_tools = []
         is_truncated = False
@@ -420,91 +548,86 @@ class RewindBackend:
                 })
             current_tools = []
 
-        with open(target_path, 'r', encoding='utf-8') as f:
-            if limit and limit > 0:
-                from collections import deque
-                file_size = os.path.getsize(target_path)
-                if file_size > 2 * 1024 * 1024:
-                    raw_lines = list(deque(f, maxlen=limit + 50))
-                    is_truncated = True
-                else:
-                    all_lines = f.readlines()
-                    if len(all_lines) > limit + 50:
-                        raw_lines = all_lines[-(limit + 50):]
-                        is_truncated = True
-                    else:
-                        raw_lines = all_lines
+        _tl = _load_transcript(target_path)
+        if limit and limit > 0:
+            file_size = os.path.getsize(target_path)
+            if file_size > 2 * 1024 * 1024:
+                raw_lines = _tl[-(limit + 50):]
+                is_truncated = True
+            elif len(_tl) > limit + 50:
+                raw_lines = _tl[-(limit + 50):]
+                is_truncated = True
             else:
-                raw_lines = f.readlines()
+                raw_lines = _tl
+        else:
+            raw_lines = _tl
 
-            for line_idx, line in enumerate(raw_lines):
-                line = line.strip()
-                if not line:
-                    continue
-                try:
-                    obj = json.loads(line)
-                    s_idx = obj.get('step_index', line_idx)
-                    source = obj.get('source')
-                    m_type = obj.get('type')
-                    content = obj.get('content', '')
-                    thinking = obj.get('thinking', '')
-                    t_calls = obj.get('tool_calls', [])
+        for line_idx, obj in enumerate(raw_lines):
+            if obj is None:
+                continue
+            try:
+                s_idx = obj.get('step_index', line_idx)
+                source = obj.get('source')
+                m_type = obj.get('type')
+                content = obj.get('content', '')
+                thinking = obj.get('thinking', '')
+                t_calls = obj.get('tool_calls', [])
 
-                    if source == 'USER_EXPLICIT' or m_type == 'USER_INPUT':
+                if source == 'USER_EXPLICIT' or m_type == 'USER_INPUT':
+                    flush_tools()
+                    req_text = content
+                    m = re.search(r'<USER_REQUEST>\s*(.*?)\s*</USER_REQUEST>', content, re.DOTALL)
+                    if m:
+                        req_text = m.group(1).strip()
+                    feed.append({
+                        'id': f"user_{s_idx}",
+                        'type': 'user',
+                        'step_index': s_idx,
+                        'undo_target_step': max(-1, s_idx - 1),
+                        'text': req_text,
+                        'timestamp': obj.get('created_at', '')
+                    })
+                elif m_type == 'PLANNER_RESPONSE':
+                    if thinking and thinking.strip():
                         flush_tools()
-                        req_text = content
-                        m = re.search(r'<USER_REQUEST>\s*(.*?)\s*</USER_REQUEST>', content, re.DOTALL)
-                        if m:
-                            req_text = m.group(1).strip()
+                        dur_sec = max(8, min(58, len(thinking) // 25))
+                        dur_label = f"Thinking for {dur_sec}s" if len(thinking) < 1600 else f"Worked for {max(1, len(thinking) // 1600)}m"
                         feed.append({
-                            'id': f"user_{s_idx}",
-                            'type': 'user',
+                            'id': f"think_{s_idx}",
+                            'type': 'thinking',
                             'step_index': s_idx,
                             'undo_target_step': max(-1, s_idx - 1),
-                            'text': req_text,
+                            'thinking': thinking.strip(),
+                            'length': len(thinking),
+                            'duration_label': dur_label,
                             'timestamp': obj.get('created_at', '')
                         })
-                    elif m_type == 'PLANNER_RESPONSE':
-                        if thinking and thinking.strip():
-                            flush_tools()
-                            dur_sec = max(8, min(58, len(thinking) // 25))
-                            dur_label = f"Thinking for {dur_sec}s" if len(thinking) < 1600 else f"Worked for {max(1, len(thinking) // 1600)}m"
-                            feed.append({
-                                'id': f"think_{s_idx}",
-                                'type': 'thinking',
-                                'step_index': s_idx,
-                                'undo_target_step': max(-1, s_idx - 1),
-                                'thinking': thinking.strip(),
-                                'length': len(thinking),
-                                'duration_label': dur_label,
-                                'timestamp': obj.get('created_at', '')
-                            })
 
-                        if content and content.strip():
-                            flush_tools()
-                            feed.append({
-                                'id': f"asst_{s_idx}",
-                                'type': 'assistant',
-                                'step_index': s_idx,
-                                'undo_target_step': max(-1, s_idx - 1),
-                                'keep_target_step': s_idx,
-                                'text': content.strip(),
-                                'timestamp': obj.get('created_at', '')
-                            })
+                    if content and content.strip():
+                        flush_tools()
+                        feed.append({
+                            'id': f"asst_{s_idx}",
+                            'type': 'assistant',
+                            'step_index': s_idx,
+                            'undo_target_step': max(-1, s_idx - 1),
+                            'keep_target_step': s_idx,
+                            'text': content.strip(),
+                            'timestamp': obj.get('created_at', '')
+                        })
 
-                        if t_calls:
-                            for tc in t_calls:
-                                current_tools.append({
-                                    'step_index': s_idx,
-                                    'name': tc.get('name'),
-                                    'args': tc.get('args', {})
-                                })
-                    elif m_type == 'GENERIC':
-                        # Tool execution output: attach to the last tool in current_tools
-                        if current_tools:
-                            current_tools[-1]['output'] = content.strip()
-                except:
-                    pass
+                    if t_calls:
+                        for tc in t_calls:
+                            current_tools.append({
+                                'step_index': s_idx,
+                                'name': tc.get('name'),
+                                'args': tc.get('args', {})
+                            })
+                elif m_type == 'GENERIC':
+                    # Tool execution output: attach to the last tool in current_tools
+                    if current_tools:
+                        current_tools[-1]['output'] = content.strip()
+            except:
+                pass
 
         flush_tools()
         if is_truncated and feed:
@@ -529,7 +652,7 @@ class RewindBackend:
                 'loaded_steps': len(feed),
                 'message': f'Showing latest {len(feed)} steps. Click to load all {total_steps} steps.'
             })
-        return feed
+        return _cache_put(_ckey, feed)
 
     def get_conversation_prompts(self, conv_id):
         brain_path = os.path.join(self.base_path, "brain", conv_id)
@@ -538,33 +661,34 @@ class RewindBackend:
         tf_path = os.path.join(logs_path, "transcript_full.jsonl")
         target_path = t_path if os.path.exists(t_path) else tf_path
 
+        _ckey = ("prompts", target_path) + _fstat_key(target_path)
+        _hit = _cache_get(_ckey)
+        if _hit is not None:
+            return _hit
         prompts = []
         if not os.path.exists(target_path):
             return prompts
 
         try:
-            with open(target_path, "r", encoding="utf-8", errors="ignore") as f:
-                for line_idx, line in enumerate(f):
-                    if '"USER_INPUT"' in line or '"USER_EXPLICIT"' in line:
-                        try:
-                            obj = json.loads(line.strip())
-                            tp = obj.get("type")
-                            src = obj.get("source")
-                            if src == "USER_EXPLICIT" or tp == "USER_INPUT":
-                                cnt = obj.get("content", "")
-                                m = re.search(r'<USER_REQUEST>\s*(.*?)\s*</USER_REQUEST>', cnt, re.DOTALL)
-                                req_text = m.group(1).strip() if m else cnt
-                                prompts.append({
-                                    "step_index": obj.get("step_index", line_idx),
-                                    "text": req_text,
-                                    "timestamp": obj.get("created_at", "")
-                                })
-                        except Exception:
-                            continue
+            _tl = _load_transcript(target_path)
+            for line_idx, obj in enumerate(_tl):
+                if obj is None:
+                    continue
+                tp = obj.get("type")
+                src = obj.get("source")
+                if src == "USER_EXPLICIT" or tp == "USER_INPUT":
+                    cnt = obj.get("content", "")
+                    m = re.search(r'<USER_REQUEST>\s*(.*?)\s*</USER_REQUEST>', cnt, re.DOTALL)
+                    req_text = m.group(1).strip() if m else cnt
+                    prompts.append({
+                        "step_index": obj.get("step_index", line_idx),
+                        "text": req_text,
+                        "timestamp": obj.get("created_at", "")
+                    })
         except Exception as e:
             print(f"[get_conversation_prompts] Error: {e}")
 
-        return prompts
+        return _cache_put(_ckey, prompts)
 
     def get_steps(self, conv_id):
         brain_path = os.path.join(self.base_path, "brain", conv_id)
@@ -583,106 +707,111 @@ class RewindBackend:
         steps = []
         user_c = assistant_c = tool_c = output_c = system_c = 0
 
-        with open(t_path, "r", encoding="utf-8") as f:
-            for line_idx, line in enumerate(f):
-                line = line.strip()
-                if not line:
-                    continue
-                try:
-                    obj = json.loads(line)
-                    s_idx = obj.get("step_index", line_idx)
-                    source = obj.get("source", "")
-                    m_type = obj.get("type", "")
-                    created = obj.get("created_at", "")
-                    content = obj.get("content", "")
-                    thinking = obj.get("thinking", "")
-                    tool_calls = obj.get("tool_calls", [])
+        _tl = _load_transcript(t_path)
+        try:
+            _ckey = ("steps", t_path) + _fstat_key(t_path)
+        except OSError:
+            return empty_res
+        _hit = _cache_get(_ckey)
+        if _hit is not None:
+            return _hit
+        for line_idx, obj in enumerate(_tl):
+            if obj is None:
+                continue
+            try:
+                s_idx = obj.get("step_index", line_idx)
+                source = obj.get("source", "")
+                m_type = obj.get("type", "")
+                created = obj.get("created_at", "")
+                content = obj.get("content", "")
+                thinking = obj.get("thinking", "")
+                tool_calls = obj.get("tool_calls", [])
 
+                category = "SYSTEM"
+                badge_color = "slate"
+                title = m_type
+                snippet = ""
+                command = ""
+                tool_summary = ""
+                tool_name = ""
+
+                if source == "USER_EXPLICIT" or m_type == "USER_INPUT":
+                    category = "USER"
+                    badge_color = "emerald"
+                    title = "User Request"
+                    user_c += 1
+                    if content:
+                        m = re.search(r'<USER_REQUEST>\s*(.*?)\s*</USER_REQUEST>', content, re.DOTALL)
+                        if m:
+                            snippet = m.group(1).strip()
+                        else:
+                            snippet = content.strip()
+                elif source == "MODEL" or m_type == "PLANNER_RESPONSE":
+                    if tool_calls:
+                        tc0 = tool_calls[0]
+                        tool_name = tc0.get("name", "")
+                        args = tc0.get("args", {})
+                        category = "TOOL"
+                        badge_color = "purple"
+                        title = f"Tool: {tool_name}"
+                        tool_c += 1
+                        if "toolSummary" in args:
+                            tool_summary = args["toolSummary"]
+                            title = tool_summary
+                        if "CommandLine" in args:
+                            command = args["CommandLine"]
+                        elif "AbsolutePath" in args:
+                            command = args["AbsolutePath"]
+                        elif "Prompt" in args:
+                            command = args["Prompt"]
+                        elif "TargetFile" in args:
+                            command = args["TargetFile"]
+                    else:
+                        category = "ASSISTANT"
+                        badge_color = "blue"
+                        title = "Assistant Response"
+                        assistant_c += 1
+                        snippet = content if content else ""
+                elif m_type == "GENERIC":
+                    category = "OUTPUT"
+                    badge_color = "amber"
+                    title = "Execution Output"
+                    output_c += 1
+                    snippet = content.strip() if content else ""
+                elif m_type == "SYSTEM_MESSAGE":
                     category = "SYSTEM"
                     badge_color = "slate"
-                    title = m_type
-                    snippet = ""
-                    command = ""
-                    tool_summary = ""
-                    tool_name = ""
+                    title = "System Event"
+                    system_c += 1
+                    snippet = content.strip() if content else ""
+                else:
+                    system_c += 1
 
-                    if source == "USER_EXPLICIT" or m_type == "USER_INPUT":
-                        category = "USER"
-                        badge_color = "emerald"
-                        title = "User Request"
-                        user_c += 1
-                        if content:
-                            m = re.search(r'<USER_REQUEST>\s*(.*?)\s*</USER_REQUEST>', content, re.DOTALL)
-                            if m:
-                                snippet = m.group(1).strip()
-                            else:
-                                snippet = content.strip()
-                    elif source == "MODEL" or m_type == "PLANNER_RESPONSE":
-                        if tool_calls:
-                            tc0 = tool_calls[0]
-                            tool_name = tc0.get("name", "")
-                            args = tc0.get("args", {})
-                            category = "TOOL"
-                            badge_color = "purple"
-                            title = f"Tool: {tool_name}"
-                            tool_c += 1
-                            if "toolSummary" in args:
-                                tool_summary = args["toolSummary"]
-                                title = tool_summary
-                            if "CommandLine" in args:
-                                command = args["CommandLine"]
-                            elif "AbsolutePath" in args:
-                                command = args["AbsolutePath"]
-                            elif "Prompt" in args:
-                                command = args["Prompt"]
-                            elif "TargetFile" in args:
-                                command = args["TargetFile"]
-                        else:
-                            category = "ASSISTANT"
-                            badge_color = "blue"
-                            title = "Assistant Response"
-                            assistant_c += 1
-                            snippet = content if content else ""
-                    elif m_type == "GENERIC":
-                        category = "OUTPUT"
-                        badge_color = "amber"
-                        title = "Execution Output"
-                        output_c += 1
-                        snippet = content.strip() if content else ""
-                    elif m_type == "SYSTEM_MESSAGE":
-                        category = "SYSTEM"
-                        badge_color = "slate"
-                        title = "System Event"
-                        system_c += 1
-                        snippet = content.strip() if content else ""
-                    else:
-                        system_c += 1
+                # Formatted time
+                time_str = ""
+                if created:
+                    try:
+                        time_str = created.replace("T", " ").replace("Z", "")[:19]
+                    except:
+                        time_str = created
 
-                    # Formatted time
-                    time_str = ""
-                    if created:
-                        try:
-                            time_str = created.replace("T", " ").replace("Z", "")[:19]
-                        except:
-                            time_str = created
-
-                    steps.append({
-                        "step_index": s_idx,
-                        "line_index": line_idx,
-                        "source": source,
-                        "type": m_type,
-                        "category": category,
-                        "badge_color": badge_color,
-                        "title": title,
-                        "tool_name": tool_name,
-                        "tool_summary": tool_summary,
-                        "command": command[:250] if command else "",
-                        "snippet": (snippet[:180] + "...") if len(snippet) > 180 else snippet,
-                        "has_thinking": bool(thinking),
-                        "timestamp": time_str
-                    })
-                except:
-                    pass
+                steps.append({
+                    "step_index": s_idx,
+                    "line_index": line_idx,
+                    "source": source,
+                    "type": m_type,
+                    "category": category,
+                    "badge_color": badge_color,
+                    "title": title,
+                    "tool_name": tool_name,
+                    "tool_summary": tool_summary,
+                    "command": command[:250] if command else "",
+                    "snippet": (snippet[:180] + "...") if len(snippet) > 180 else snippet,
+                    "has_thinking": bool(thinking),
+                    "timestamp": time_str
+                })
+            except:
+                pass
 
         # Compute Density Histogram (60 bins across steps)
         total_steps = len(steps)
@@ -713,7 +842,7 @@ class RewindBackend:
                     "total": len(bin_slice)
                 })
 
-        return {
+        return _cache_put(_ckey, {
             "steps": steps,
             "stats": {
                 "total": total_steps,
@@ -724,7 +853,7 @@ class RewindBackend:
                 "system": system_c
             },
             "density": density_bins
-        }
+        })
 
     def perform_rollback(self, conv_id, target_step_index, make_backup=True):
         try:
@@ -743,42 +872,14 @@ class RewindBackend:
             if os.path.exists(t_path):
                 with open(t_path, "r", encoding="utf-8") as f:
                     t_lines = f.readlines()
-                kept_t = []
-                for line in t_lines:
-                    if not line.strip():
-                        continue
-                    try:
-                        obj = json.loads(line)
-                        if "step_index" in obj:
-                            if obj["step_index"] <= target_step_index:
-                                kept_t.append(line)
-                            else:
-                                break
-                        else:
-                            kept_t.append(line)
-                    except:
-                        kept_t.append(line)
+                kept_t = _kept_lines_for_rollback(t_path, t_lines, target_step_index)
                 with open(t_path, "w", encoding="utf-8") as f:
                     f.writelines(kept_t)
 
             if os.path.exists(tf_path):
                 with open(tf_path, "r", encoding="utf-8") as f:
                     tf_lines = f.readlines()
-                kept_tf = []
-                for line in tf_lines:
-                    if not line.strip():
-                        continue
-                    try:
-                        obj = json.loads(line)
-                        if "step_index" in obj:
-                            if obj["step_index"] <= target_step_index:
-                                kept_tf.append(line)
-                            else:
-                                break
-                        else:
-                            kept_tf.append(line)
-                    except:
-                        kept_tf.append(line)
+                kept_tf = _kept_lines_for_rollback(tf_path, tf_lines, target_step_index)
                 with open(tf_path, "w", encoding="utf-8") as f:
                     f.writelines(kept_tf)
 
@@ -835,6 +936,9 @@ class RewindBackend:
                     if em_row and em_row[0]:
                         orig_em = em_row[0]
                         def dec_v(buf, offset):
+                            if _RUST_PORT:
+                                # the bridge carries sequences as lists; bytes stay on the Python side
+                                return _rs_decode_varint(list(buf), offset)
                             r = 0
                             s = 0
                             while offset < len(buf):
@@ -847,6 +951,8 @@ class RewindBackend:
                             return r, offset
 
                         def enc_v(v):
+                            if _RUST_PORT:
+                                return _rs_encode_varint(v)
                             out = bytearray()
                             while v > 0x7f:
                                 out.append((v & 0x7f) | 0x80)
@@ -1145,18 +1251,13 @@ class RewindBackend:
                 return {"error": "Transcript file not found"}
 
             found_obj = None
-            with open(target_path, "r", encoding="utf-8") as f:
-                for line_idx, line in enumerate(f):
-                    line_s = line.strip()
-                    if not line_s:
-                        continue
-                    try:
-                        obj = json.loads(line_s)
-                        if obj.get("step_index") == step_index:
-                            found_obj = obj
-                            break
-                    except:
-                        pass
+            _tl = _load_transcript(target_path)
+            for line_idx, obj in enumerate(_tl):
+                if obj is None:
+                    continue
+                if obj.get("step_index") == step_index:
+                    found_obj = obj
+                    break
 
             if not found_obj:
                 return {"error": f"Step {step_index} not found in transcript"}
@@ -1264,6 +1365,8 @@ class RewindBackend:
 
     @staticmethod
     def format_bytes(bytes_count):
+        if _RUST_PORT:
+            return _rs_format_bytes(bytes_count)
         suffixes = ["B", "KB", "MB", "GB"]
         d = float(bytes_count)
         i = 0
@@ -1342,10 +1445,25 @@ class RewindBackend:
                 clean_title = "session"
             filename = f"{clean_title}_{conv_id[:8]}.md"
 
+            # Derived-output cache: markdown depends on transcript version + flags + title
+            _ckey = ("export", target_path, include_thinking, include_tools, title) + _fstat_key(target_path)
+            _hit = _cache_get(_ckey)
+            if _hit is not None:
+                _md, _stats = _hit[0], _hit[1]
+                _final = _md.replace("<EXPORT_TS>", datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+                return {
+                    "success": True,
+                    "conv_id": conv_id,
+                    "title": title,
+                    "filename": filename,
+                    "markdown": _final,
+                    "stats": dict(_stats, characters=len(_final))
+                }
+
             md = []
             md.append(f"# {title}\n")
             md.append(f"**Session ID:** `{conv_id}`  ")
-            md.append(f"**Exported:** `{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}`  ")
+            md.append(f"**Exported:** `<EXPORT_TS>`  ")
             md.append(f"**Include Thinking:** `{'Yes' if include_thinking else 'No'}`  ")
             md.append(f"**Include Tools & Calling:** `{'Yes' if include_tools else 'No'}`  ")
             md.append("\n---\n")
@@ -1404,69 +1522,65 @@ class RewindBackend:
                 md.append("---\n")
                 assistant_buffer = {"thinking": [], "tools": [], "content": []}
 
-            with open(target_path, "r", encoding="utf-8") as f:
-                for line in f:
-                    line = line.strip()
-                    if not line:
-                        continue
-                    try:
-                        obj = json.loads(line)
-                    except Exception:
-                        continue
+            for obj in _load_transcript(target_path):
+                if obj is None:
+                    continue
 
-                    source = obj.get("source")
-                    m_type = obj.get("type")
-                    content = obj.get("content", "")
-                    thinking = obj.get("thinking", "")
-                    tool_calls = obj.get("tool_calls", [])
+                source = obj.get("source")
+                m_type = obj.get("type")
+                content = obj.get("content", "")
+                thinking = obj.get("thinking", "")
+                tool_calls = obj.get("tool_calls", [])
 
-                    if source == "USER_EXPLICIT" or m_type == "USER_INPUT":
-                        flush_assistant_turn()
-                        user_turns_count += 1
-                        req_text = content
-                        m = re.search(r"<USER_REQUEST>\s*(.*?)\s*</USER_REQUEST>", content, re.DOTALL)
-                        if m:
-                            req_text = m.group(1).strip()
-                        md.append(f"## User\n\n{req_text}\n\n---\n")
+                if source == "USER_EXPLICIT" or m_type == "USER_INPUT":
+                    flush_assistant_turn()
+                    user_turns_count += 1
+                    req_text = content
+                    m = re.search(r"<USER_REQUEST>\s*(.*?)\s*</USER_REQUEST>", content, re.DOTALL)
+                    if m:
+                        req_text = m.group(1).strip()
+                    md.append(f"## User\n\n{req_text}\n\n---\n")
 
-                    elif m_type == "PLANNER_RESPONSE":
-                        if thinking and thinking.strip():
-                            assistant_buffer["thinking"].append(thinking.strip())
+                elif m_type == "PLANNER_RESPONSE":
+                    if thinking and thinking.strip():
+                        assistant_buffer["thinking"].append(thinking.strip())
 
-                        if tool_calls:
-                            for tc in tool_calls:
-                                t_item = {
-                                    "name": tc.get("name"),
-                                    "args": tc.get("args", {})
-                                }
-                                pending_tools.append(t_item)
-                                assistant_buffer["tools"].append(t_item)
+                    if tool_calls:
+                        for tc in tool_calls:
+                            t_item = {
+                                "name": tc.get("name"),
+                                "args": tc.get("args", {})
+                            }
+                            pending_tools.append(t_item)
+                            assistant_buffer["tools"].append(t_item)
 
-                        if content and content.strip():
-                            assistant_buffer["content"].append(content.strip())
+                    if content and content.strip():
+                        assistant_buffer["content"].append(content.strip())
 
-                    elif m_type == "GENERIC":
-                        if pending_tools:
-                            last_tool = pending_tools.pop(0)
-                            last_tool["output"] = content.strip()
+                elif m_type == "GENERIC":
+                    if pending_tools:
+                        last_tool = pending_tools.pop(0)
+                        last_tool["output"] = content.strip()
 
             flush_assistant_turn()
             final_markdown = "\n".join(md)
 
+            _stats = {
+                "user_turns": user_turns_count,
+                "assistant_turns": asst_turns_count,
+                "thinking_blocks": thinking_blocks_count,
+                "tool_calls": tool_calls_count,
+                "lines": len(final_markdown.splitlines())
+            }
+            _cache_put(_ckey, (final_markdown, _stats))
+            _final = final_markdown.replace("<EXPORT_TS>", datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
             return {
                 "success": True,
                 "conv_id": conv_id,
                 "title": title,
                 "filename": filename,
-                "markdown": final_markdown,
-                "stats": {
-                    "user_turns": user_turns_count,
-                    "assistant_turns": asst_turns_count,
-                    "thinking_blocks": thinking_blocks_count,
-                    "tool_calls": tool_calls_count,
-                    "characters": len(final_markdown),
-                    "lines": len(final_markdown.splitlines())
-                }
+                "markdown": _final,
+                "stats": dict(_stats, characters=len(_final))
             }
         except Exception as e:
             return {"success": False, "error": str(e)}
@@ -1498,58 +1612,62 @@ class RewindBackend:
         escaped = re.escape(query.strip())
         pattern = re.compile(f"({escaped})", flags)
 
+        _ckey = ("search", target_path, query.strip(), case_sensitive, limit) + _fstat_key(target_path)
+        _hit = _cache_get(_ckey)
+        if _hit is not None:
+            return _hit
         matches = []
         total_matches = 0
 
         try:
-            with open(target_path, "r", encoding="utf-8", errors="ignore") as f:
-                for line_idx, line in enumerate(f):
-                    if not line.strip():
-                        continue
-                    try:
-                        step = json.loads(line)
-                    except Exception:
-                        continue
+            _tl = _load_transcript(target_path)
+            for line_idx, obj in enumerate(_tl):
+                if obj is None:
+                    continue
+                try:
+                    step = obj
+                except Exception:
+                    continue
 
-                    step_idx = step.get("step_index", line_idx)
-                    tp = step.get("type", "")
-                    src = step.get("source", "")
-                    role = "assistant"
-                    if tp == "USER_INPUT" or src == "USER_EXPLICIT":
-                        role = "user"
-                    elif tp in ["GENERIC", "TOOL"]:
-                        role = "tool"
+                step_idx = step.get("step_index", line_idx)
+                tp = step.get("type", "")
+                src = step.get("source", "")
+                role = "assistant"
+                if tp == "USER_INPUT" or src == "USER_EXPLICIT":
+                    role = "user"
+                elif tp in ["GENERIC", "TOOL"]:
+                    role = "tool"
 
-                    cnt = step.get("content") or ""
-                    thinking = step.get("thinking") or ""
-                    tool_calls = step.get("tool_calls") or []
+                cnt = step.get("content") or ""
+                thinking = step.get("thinking") or ""
+                tool_calls = step.get("tool_calls") or []
 
-                    tc_text = ""
-                    if tool_calls:
-                        tc_text = " ".join([f"{t.get('name', '')} {json.dumps(t.get('args', {}))}" for t in tool_calls])
+                tc_text = ""
+                if tool_calls:
+                    tc_text = " ".join([f"{t.get('name', '')} {json.dumps(t.get('args', {}))}" for t in tool_calls])
 
-                    combined_text = f"{cnt} {thinking} {tc_text}"
-                    found = list(pattern.finditer(combined_text))
-                    if found:
-                        count = len(found)
-                        total_matches += count
-                        m0 = found[0]
-                        start = max(0, m0.start() - 40)
-                        end = min(len(combined_text), m0.end() + 60)
-                        snippet = combined_text[start:end].replace("\n", " ").strip()
-                        if start > 0:
-                            snippet = "..." + snippet
-                        if end < len(combined_text):
-                            snippet = snippet + "..."
+                combined_text = f"{cnt} {thinking} {tc_text}"
+                found = list(pattern.finditer(combined_text))
+                if found:
+                    count = len(found)
+                    total_matches += count
+                    m0 = found[0]
+                    start = max(0, m0.start() - 40)
+                    end = min(len(combined_text), m0.end() + 60)
+                    snippet = combined_text[start:end].replace("\n", " ").strip()
+                    if start > 0:
+                        snippet = "..." + snippet
+                    if end < len(combined_text):
+                        snippet = snippet + "..."
 
-                        if len(matches) < limit:
-                            matches.append({
-                                "step_index": step_idx,
-                                "role": role,
-                                "type": tp,
-                                "match_count": count,
-                                "snippet": snippet
-                            })
+                    if len(matches) < limit:
+                        matches.append({
+                            "step_index": step_idx,
+                            "role": role,
+                            "type": tp,
+                            "match_count": count,
+                            "snippet": snippet
+                        })
         except Exception as e:
             return {
                 "success": False,
@@ -1558,14 +1676,14 @@ class RewindBackend:
                 "matches": matches
             }
 
-        return {
+        return _cache_put(_ckey, {
             "success": True,
             "conv_id": conv_id,
             "query": query,
             "total_matches": total_matches,
             "turns_count": len(matches),
             "matches": matches
-        }
+        })
 
 
     
