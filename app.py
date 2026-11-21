@@ -1,7 +1,20 @@
+import gzip
+import io as _io
 import os
+import socket
 import sys
 import json
 import threading
+
+# orjson (Rust) when available: ~3x faster API response serialization
+try:
+    import orjson as _orjson
+
+    def _jdumps(o):
+        return _orjson.dumps(o)
+except Exception:
+    def _jdumps(o):
+        return json.dumps(o).encode("utf-8")
 import subprocess
 import urllib.parse
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
@@ -148,7 +161,7 @@ class AppHandler(SimpleHTTPRequestHandler):
             except Exception as e:
                 res = {"error": str(e)}
 
-            response_bytes = json.dumps(res).encode("utf-8")
+            response_bytes = _jdumps(res)
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(response_bytes)))
@@ -212,10 +225,47 @@ def launch_edge_app(port):
 def is_server_alive(port):
     try:
         import urllib.request
-        with urllib.request.urlopen(f"http://127.0.0.1:{port}/index.html", timeout=1.0) as resp:
+        # never route a localhost check through a system proxy
+        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+        with opener.open(f"http://127.0.0.1:{port}/index.html", timeout=2.0) as resp:
             return resp.status == 200
     except Exception:
         return False
+
+
+def _probe_port_connect(port, result):
+    s = socket.socket()
+    s.settimeout(0.75)
+    try:
+        s.connect(("127.0.0.1", port))
+        result[port] = True
+    except Exception:
+        result[port] = False
+    finally:
+        try:
+            s.close()
+        except Exception:
+            pass
+
+
+def find_running_server():
+    # Probe every candidate port IN PARALLEL. On some machines (VPN/TUN filters)
+    # connects to closed localhost ports hang until timeout, so probing them one
+    # by one used to cost ~1s per port (~20s startup). Parallel probing caps the
+    # wait at a single timeout, then the live port is validated over HTTP.
+    result = {}
+    threads = [
+        threading.Thread(target=_probe_port_connect, args=(p, result), daemon=True)
+        for p in range(PORT, PORT + 20)
+    ]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    for p in sorted(result):
+        if result[p] and is_server_alive(p):
+            return p
+    return None
 
 
 def main():
@@ -227,11 +277,11 @@ def main():
         return
 
     # 1. Single-Instance Check: If Antigravity Rewind is already running, activate window and exit
-    for p in range(PORT, PORT + 20):
-        if is_server_alive(p):
-            print(f"Antigravity Rewind is already running on http://127.0.0.1:{p}. Activating window...")
-            launch_edge_app(p)
-            return
+    running_port = find_running_server()
+    if running_port:
+        print(f"Antigravity Rewind is already running on http://127.0.0.1:{running_port}. Activating window...")
+        launch_edge_app(running_port)
+        return
 
     # 2. Find free port to bind server
     port = PORT
